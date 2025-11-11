@@ -66,6 +66,12 @@ function MainApp() {
   );
 }
 
+function RootRedirect() {
+  // URLパラメータを保持してリダイレクト
+  const search = window.location.search;
+  return <Navigate to={`/auth${search}`} replace />;
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -80,7 +86,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/" element={<Navigate to="/auth" replace />} />
+          <Route path="/" element={<RootRedirect />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

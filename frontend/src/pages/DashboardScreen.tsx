@@ -8,6 +8,8 @@ import { createProposal, getSettings, executeProposal, getWalletSummary } from '
 import { ExecutionResultCard } from '../components/ExecutionResultCard';
 import { getLatestProposal } from '../api/proposals';
 import type { ProposalHistoryItem } from '../types/proposal';
+import { useAuth } from '../contexts/AuthContext';
+import { apiClient } from '../api/client';
 
 // 実行結果の型
 interface ExecuteResult {
@@ -26,8 +28,14 @@ type HomeState =
   | { status: 'error'; message: string };
 
 export function DashboardScreen() {
+  const { user, walletAddress } = useAuth();
+
   // デモモードフラグ
   const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
+
+  // URLパラメータからシナリオを取得
+  const params = new URLSearchParams(window.location.search);
+  const scenario = params.get('scenario') || 'best'; // デフォルトは best
 
   // デモモード用のモック提案データ
   const mockProposal: Proposal = {
@@ -35,16 +43,16 @@ export function DashboardScreen() {
     createdAt: new Date().toISOString(),
     salaryAmountArs: 120000,
     convertAmountArs: 72000,
-    amountUsdc: 56.89,
+    amountUsdc: 56.4,
     bestRateSource: 'BLUE',
-    bestRateArsPerUsdc: 1265.5,
-    gasFeeArs: 15,
-    reason: 'ガス代が低く、BLUEレートが過去1週間で最高値に近い水準です。今が変換の好機です。',
+    bestRateArsPerUsdc: 1276.6,
+    gasFeeArs: 0.015,
+    reason: 'ガス代が低く、BLUEレートが他の市場（MEP・CCL）より有利です。今が変換の好機です。',
   };
 
-  // 統一されたState管理（デモモードでは初期状態を'proposal'に）
+  // 統一されたState管理
   const [homeState, setHomeState] = useState<HomeState>(
-    DEMO_MODE ? { status: 'proposal', proposal: mockProposal } : { status: 'idle' }
+    DEMO_MODE && scenario === 'best' ? { status: 'proposal', proposal: mockProposal } : { status: 'idle' }
   );
   const [settings, setSettings] = useState<SalarySettings | null>(null);
   const [walletSummary, setWalletSummary] = useState<WalletSummary | null>(null);
@@ -104,15 +112,48 @@ export function DashboardScreen() {
     // 未読フラグをクリア
     setHasUnreadProposal(false);
 
-    setHomeState({ status: 'proposing' });
-    try {
-      const newProposal = await createProposal();
-      setHomeState({ status: 'proposal', proposal: newProposal });
-    } catch (err) {
+    if (!user?.userId) {
       setHomeState({
         status: 'error',
-        message: err instanceof Error ? err.message : '提案の取得に失敗しました',
+        message: 'ログインが必要です',
       });
+      return;
+    }
+
+    setHomeState({ status: 'proposing' });
+    try {
+      // 新しいAPI: POST /propose を呼び出す
+      const response = await apiClient.createPropose({
+        userId: user.userId
+      });
+
+      // レスポンスをProposal型に変換
+      const newProposal: Proposal = {
+        proposalId: response.proposalId,
+        createdAt: new Date().toISOString(),
+        salaryAmountArs: parseFloat(response.details.salaryAmountArs),
+        convertAmountArs: parseFloat(response.details.convertArs),
+        amountUsdc: parseFloat(response.details.amountUsdc),
+        bestRateSource: response.details.bestRate.source,
+        bestRateArsPerUsdc: parseFloat(response.details.bestRate.rateArsPerUsdc),
+        gasFeeArs: 0.015, // TODO: バックエンドから取得
+        reason: response.assistantText,
+      };
+
+      setHomeState({ status: 'proposal', proposal: newProposal });
+    } catch (err) {
+      console.error('Propose API error:', err);
+
+      // エラー時は旧APIにフォールバック
+      try {
+        const newProposal = await createProposal();
+        setHomeState({ status: 'proposal', proposal: newProposal });
+      } catch (fallbackErr) {
+        setHomeState({
+          status: 'error',
+          message: fallbackErr instanceof Error ? fallbackErr.message : '提案の取得に失敗しました',
+        });
+      }
     }
   };
 
@@ -122,11 +163,35 @@ export function DashboardScreen() {
   const handleExecute = async () => {
     if (homeState.status !== 'proposal') return;
 
+    if (!user?.userId || !walletAddress) {
+      setHomeState({
+        status: 'error',
+        message: 'ログインが必要です',
+      });
+      return;
+    }
+
     const proposal = homeState.proposal;
     setHomeState({ status: 'executing', proposal });
 
     try {
-      const result = await executeProposal(proposal.proposalId);
+      // TODO: ARS送金のtxHashを取得（現在は仮実装）
+      const arsTxHash = '0x' + Math.random().toString(16).substr(2, 64);
+
+      // 新しいAPI: POST /execute (action=confirm) を呼び出す
+      const executeResponse = await apiClient.executePropose({
+        userId: user.userId,
+        proposalId: proposal.proposalId,
+        action: 'confirm',
+        userWalletAddress: walletAddress,
+        arsTxHash: arsTxHash
+      });
+
+      const result: ExecuteResult = {
+        txHash: executeResponse.txHash || '0x...',
+        actualAmountUsdc: proposal.amountUsdc,
+        executedAt: new Date().toISOString()
+      };
 
       // 完了画面へ遷移
       setHomeState({
@@ -139,18 +204,56 @@ export function DashboardScreen() {
       const updatedSummary = await getWalletSummary();
       setWalletSummary(updatedSummary);
     } catch (err) {
-      setHomeState({
-        status: 'error',
-        message: err instanceof Error ? err.message : '実行に失敗しました',
-      });
+      console.error('Execute API error:', err);
+
+      // エラー時は旧APIにフォールバック
+      try {
+        const result = await executeProposal(proposal.proposalId);
+        setHomeState({
+          status: 'completed',
+          proposal,
+          result,
+        });
+
+        const updatedSummary = await getWalletSummary();
+        setWalletSummary(updatedSummary);
+      } catch (fallbackErr) {
+        setHomeState({
+          status: 'error',
+          message: fallbackErr instanceof Error ? fallbackErr.message : '実行に失敗しました',
+        });
+      }
     }
   };
 
   /**
    * 提案をスキップ（proposal → idle）
    */
-  const handleSkip = () => {
-    setHomeState({ status: 'idle' });
+  const handleSkip = async () => {
+    if (homeState.status !== 'proposal') return;
+
+    if (!user?.userId) {
+      console.error('User not authenticated');
+      setHomeState({ status: 'idle' });
+      return;
+    }
+
+    const proposal = homeState.proposal;
+
+    try {
+      // 新しいAPI: POST /execute (action=skip) を呼び出す
+      await apiClient.executePropose({
+        userId: user.userId,
+        proposalId: proposal.proposalId,
+        action: 'skip'
+      });
+
+      setHomeState({ status: 'idle' });
+    } catch (err) {
+      console.error('Skip API error:', err);
+      // エラーでもidleに戻す
+      setHomeState({ status: 'idle' });
+    }
   };
 
   /**
@@ -160,9 +263,9 @@ export function DashboardScreen() {
   const handleAskWhy = (proposal: Proposal) => {
     // 提案内容をlocalStorageに保存（チャット画面で取得）
     localStorage.setItem('preloadProposal', JSON.stringify(proposal));
+    localStorage.setItem('chatScenario', 'best');
 
     // チャットタブに遷移（App.jsxのタブ切り替え機能を使用）
-    // 注: 実際の実装ではContext APIやZustandなどの状態管理を使う方が良い
     window.dispatchEvent(new CustomEvent('switchTab', { detail: 'chat' }));
   };
 
@@ -189,7 +292,7 @@ export function DashboardScreen() {
       {/* ヘッダー */}
       <header className="dashboard-header">
         <div className="dashboard-header-content">
-          <h1 className="dashboard-app-name">💼 Porteño</h1>
+          <h1 className="dashboard-app-name">💱 Camb.ai</h1>
           <button
             className="dashboard-notification-button"
             aria-label="通知"
@@ -214,54 +317,88 @@ export function DashboardScreen() {
 
         {/* ========== idle: AIが監視中 ========== */}
         {homeState.status === 'idle' && (
-          <div className="hero-card hero-card-empty">
-            <div className="hero-card-icon">🤖</div>
-            <h2 className="hero-card-title">AIがあなたの給料を守っています</h2>
-            <p className="hero-card-description">
-              レート・ガス代を24時間監視し、
-              <br />
-              給料日に最適なタイミングで提案します。
-            </p>
-            <div className="hero-card-status">
-              <div className="hero-card-status-indicator">
-                <span className="hero-card-status-dot"></span>
-                <span className="hero-card-status-text">監視中</span>
-              </div>
-              <div className="hero-card-status-info">
-                次回給料日: {settings?.paymentDay}日 （あと{daysUntilPayday}日）
-              </div>
-              {/* 最後の提案行（提案が存在する場合のみ表示） */}
-              {latestProposal && (
-                <div className="hero-card-last-proposal">
-                  最後の提案:{' '}
-                  {new Date(latestProposal.createdAt).toLocaleDateString('ja-JP', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                  })}{' '}
-                  {new Date(latestProposal.createdAt).toLocaleTimeString('ja-JP', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                  （{latestProposal.bestRateSource}）
+          <>
+            {/* scenario=wait の場合 */}
+            {DEMO_MODE && scenario === 'wait' ? (
+              <div className="hero-card hero-card-empty">
+                <div className="hero-card-status-indicator" style={{ marginBottom: '20px' }}>
+                  <span className="hero-card-status-dot"></span>
+                  <span className="hero-card-status-text">監視中</span>
                 </div>
-              )}
-            </div>
+                <p className="hero-card-description" style={{ marginBottom: '24px', fontSize: '0.95em' }}>
+                  Camb.ai は Blue / MEP / CCL とガス代を常時監視しています。
+                </p>
 
-            {/* 給料日の場合、特別なメッセージを表示 */}
-            {isPayday && (
-              <div className="hero-card-payday-notice">
-                今日は給料日です。AIから提案が届いています。
+                <div className="hero-card-wait-message">
+                  <div className="hero-card-icon">⏳</div>
+                  <h2 className="hero-card-title">今日はまだ様子を見たほうが良さそうです</h2>
+                  <p className="hero-card-description">
+                    レートとガス代が十分に有利ではありません。
+                    <br />
+                    条件が揃えば、最適なタイミングで自動的にご提案します。
+                  </p>
+                </div>
+
+                <button
+                  className="hero-card-button hero-card-button-demo"
+                  onClick={() => {
+                    localStorage.setItem('chatScenario', 'wait');
+                    window.dispatchEvent(new CustomEvent('switchTab', { detail: 'chat' }));
+                  }}
+                >
+                  💬 今の状況をチャットで聞く
+                </button>
+              </div>
+            ) : (
+              /* scenario=best または通常モード */
+              <div className="hero-card hero-card-empty">
+                <div className="hero-card-icon">🤖</div>
+                <h2 className="hero-card-title">AIがあなたの給料を守っています</h2>
+                <p className="hero-card-description">
+                  レート・ガス代を24時間監視し、
+                  <br />
+                  給料日に最適なタイミングで提案します。
+                </p>
+                <div className="hero-card-status">
+                  <div className="hero-card-status-indicator">
+                    <span className="hero-card-status-dot"></span>
+                    <span className="hero-card-status-text">監視中</span>
+                  </div>
+                  <div className="hero-card-status-info">
+                    次回給料日: {settings?.paymentDay}日 （あと{daysUntilPayday}日）
+                  </div>
+                  {latestProposal && (
+                    <div className="hero-card-last-proposal">
+                      最後の提案:{' '}
+                      {new Date(latestProposal.createdAt).toLocaleDateString('ja-JP', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                      })}{' '}
+                      {new Date(latestProposal.createdAt).toLocaleTimeString('ja-JP', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                      （{latestProposal.bestRateSource}）
+                    </div>
+                  )}
+                </div>
+
+                {isPayday && (
+                  <div className="hero-card-payday-notice">
+                    今日は給料日です。AIから提案が届いています。
+                  </div>
+                )}
+
+                <button
+                  className="hero-card-button hero-card-button-demo"
+                  onClick={handleCheckProposal}
+                >
+                  🔔 今日の提案を開く
+                </button>
               </div>
             )}
-
-            <button
-              className="hero-card-button hero-card-button-demo"
-              onClick={handleCheckProposal}
-            >
-              🔔 今日の提案を開く
-            </button>
-          </div>
+          </>
         )}
 
         {/* ========== proposing: 提案生成中 ========== */}
@@ -328,7 +465,7 @@ export function DashboardScreen() {
               </div>
               <div className="hero-card-meta-divider">•</div>
               <div className="hero-card-meta-item">
-                ガス代: {homeState.proposal.gasFeeArs} POL
+                ガス代: {homeState.proposal.gasFeeArs} PoL
               </div>
             </div>
 

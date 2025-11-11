@@ -16,6 +16,16 @@
   min-height: 100vh;
   background: #F9FAFB;
   padding-bottom: 80px;
+  overflow-x: hidden;
+}
+
+/* iPhone 16 Pro対応 (430 x 932 px) */
+@media screen and (max-width: 430px) {
+  .dashboard-screen,
+  .settings-screen,
+  .history-screen {
+    padding-bottom: 90px;
+  }
 }
 
 /* Header */
@@ -76,7 +86,16 @@
 .history-content {
   max-width: 480px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 20px 16px 24px 16px;
+}
+
+/* iPhone 16 Pro対応 */
+@media screen and (max-width: 430px) {
+  .dashboard-content,
+  .settings-content,
+  .history-content {
+    padding: 16px 14px 24px 14px;
+  }
 }
 
 .dashboard-error {
@@ -98,11 +117,20 @@
 
 .hero-card {
   background: #FFFFFF;
-  border: 1px solid #E5E7EB;
-  border-radius: 24px;
-  padding: 40px 32px;
-  margin-bottom: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 20px 40px rgba(0, 0, 0, 0.03);
+  border: 3px solid #000000;
+  border-radius: 32px;
+  padding: 32px 28px;
+  margin-bottom: 20px;
+  box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 1);
+}
+
+/* iPhone 16 Pro対応 */
+@media screen and (max-width: 430px) {
+  .hero-card {
+    padding: 24px 20px;
+    border-radius: 24px;
+    box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  }
 }
 
 .hero-card-empty {
@@ -122,6 +150,15 @@
   color: #1A1A1A;
   margin: 0 0 12px 0;
   letter-spacing: -0.02em;
+  word-wrap: break-word;
+}
+
+/* iPhone 16 Pro対応 */
+@media screen and (max-width: 430px) {
+  .hero-card-title {
+    font-size: 1.25em;
+    line-height: 1.3;
+  }
 }
 
 .hero-card-description {
@@ -129,6 +166,16 @@
   color: #6B7280;
   line-height: 1.6;
   margin: 0 0 32px 0;
+  word-wrap: break-word;
+}
+
+/* iPhone 16 Pro対応 */
+@media screen and (max-width: 430px) {
+  .hero-card-description {
+    font-size: 0.95em;
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
 }
 
 .hero-card-status {
@@ -194,28 +241,37 @@
 .hero-card-button {
   width: 100%;
   padding: 16px 24px;
-  font-size: 1em;
-  font-weight: 600;
+  font-size: 1.05em;
+  font-weight: 700;
   cursor: pointer;
-  border: none;
-  border-radius: 12px;
-  transition: all 0.2s;
+  border: 3px solid #000000;
+  border-radius: 50px;
+  transition: all 0.15s;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  position: relative;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.hero-card-button:active {
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+  transform: translate(2px, 2px);
 }
 
 .hero-card-button-demo {
   background: #74ACDF;
   color: #FFFFFF;
-  border: 2px solid #74ACDF;
+  border: 3px solid #000000;
 }
 
 .hero-card-button-demo:hover {
   background: #5A94CB;
-  border-color: #5A94CB;
-  transform: translateY(-1px);
+  border-color: #000000;
 }
 
 .hero-card-button-demo:active {
-  transform: translateY(0);
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+  transform: translate(2px, 2px);
 }
 
 /* Loading State */
@@ -253,23 +309,37 @@
 }
 
 .proposal-timestamp {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   text-align: center;
-  padding: 0 8px;
+  padding: 0;
 }
 
 .proposal-timestamp-message {
-  font-size: 0.85em;
-  color: #6B7280;
-  line-height: 1.5;
-  margin-bottom: 6px;
+  font-size: 0.75em;
+  color: #9CA3AF;
+  font-weight: 600;
+  margin-bottom: 4px;
 }
 
 .proposal-timestamp-date {
-  font-size: 0.8em;
-  color: #9CA3AF;
+  font-size: 0.7em;
+  color: #D1D5DB;
   font-weight: 600;
-  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+/* iPhone 16 Pro対応 */
+@media screen and (max-width: 430px) {
+  .proposal-timestamp {
+    margin-bottom: 12px;
+  }
+
+  .proposal-timestamp-message {
+    font-size: 0.7em;
+  }
+
+  .proposal-timestamp-date {
+    font-size: 0.65em;
+  }
 }
 
 .hero-card-title-active {
@@ -286,11 +356,19 @@
   display: flex;
   align-items: center;
   justify-content: space-around;
-  margin-bottom: 32px;
-  padding: 32px 24px;
+  margin-bottom: 24px;
+  padding: 24px 20px;
   background: #F9FAFB;
   border-radius: 16px;
   border: 1px solid #F3F4F6;
+}
+
+/* iPhone 16 Pro対応 */
+@media screen and (max-width: 430px) {
+  .hero-card-conversion {
+    padding: 20px 16px;
+    margin-bottom: 20px;
+  }
 }
 
 .hero-card-amount {
@@ -332,54 +410,84 @@
 }
 
 .hero-card-reason {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  background: #FFFFFF;
-  border: 2px solid #74ACDF;
+  background: linear-gradient(135deg, rgba(116, 172, 223, 0.08) 0%, rgba(116, 172, 223, 0.02) 100%);
+  border: 1px solid rgba(116, 172, 223, 0.15);
   border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 28px;
-  box-shadow: 0 2px 4px rgba(116, 172, 223, 0.08), 0 4px 12px rgba(116, 172, 223, 0.06);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  text-align: center;
 }
 
 .hero-card-reason-icon {
-  font-size: 2.2em;
-  flex-shrink: 0;
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #EFF6FF;
-  border-radius: 50%;
+  font-size: 1.5em;
+  margin-bottom: 6px;
+  display: block;
+  opacity: 0.8;
 }
 
 .hero-card-reason-text {
-  flex: 1;
-  font-size: 1em;
-  color: #1A1A1A;
-  line-height: 1.7;
+  font-size: 0.9em;
+  color: #4B5563;
+  line-height: 1.5;
   font-weight: 500;
+  text-align: center;
+}
+
+/* iPhone 16 Pro対応 */
+@media screen and (max-width: 430px) {
+  .hero-card-reason {
+    padding: 14px 16px;
+    border-radius: 14px;
+    margin-bottom: 16px;
+  }
+
+  .hero-card-reason-icon {
+    font-size: 1.3em;
+    margin-bottom: 4px;
+  }
+
+  .hero-card-reason-text {
+    font-size: 0.85em;
+    line-height: 1.45;
+  }
 }
 
 .hero-card-meta {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 8px;
   margin-bottom: 24px;
   flex-wrap: wrap;
 }
 
 .hero-card-meta-item {
-  font-size: 0.9em;
-  color: #6B7280;
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  background: #FFFFFF;
+  border: 2px solid #E5E7EB;
+  border-radius: 50px;
+  padding: 6px 14px;
+  font-size: 0.8em;
+  color: #374151;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .hero-card-meta-divider {
-  color: #D1D5DB;
+  display: none;
+}
+
+/* iPhone 16 Pro対応 */
+@media screen and (max-width: 430px) {
+  .hero-card-meta {
+    gap: 6px;
+  }
+
+  .hero-card-meta-item {
+    font-size: 0.75em;
+    padding: 5px 12px;
+  }
 }
 
 .hero-card-actions {
@@ -391,37 +499,47 @@
 .hero-card-button-primary {
   background: #74ACDF;
   color: #FFFFFF;
-  border: none;
+  border: 3px solid #000000;
   padding: 18px 28px;
   font-size: 1.05em;
-  font-weight: 600;
-  border-radius: 14px;
+  font-weight: 700;
+  border-radius: 50px;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 2px 4px rgba(116, 172, 223, 0.2), 0 4px 12px rgba(116, 172, 223, 0.15);
+  transition: all 0.15s;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  position: relative;
 }
 
 .hero-card-button-primary:hover {
   background: #5A94CB;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(116, 172, 223, 0.25), 0 8px 16px rgba(116, 172, 223, 0.2);
+}
+
+.hero-card-button-primary:active {
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+  transform: translate(2px, 2px);
 }
 
 .hero-card-button-secondary {
   background: #FFFFFF;
-  color: #6B7280;
-  border: 2px solid #E5E7EB;
+  color: #1A1A1A;
+  border: 3px solid #000000;
   padding: 16px 24px;
   font-size: 1em;
-  font-weight: 600;
-  border-radius: 12px;
+  font-weight: 700;
+  border-radius: 50px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  position: relative;
 }
 
 .hero-card-button-secondary:hover {
-  background: #F9FAFB;
-  border-color: #D1D5DB;
+  background: #F0F0F0;
+}
+
+.hero-card-button-secondary:active {
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+  transform: translate(2px, 2px);
 }
 
 .hero-card-ask-why-button {
@@ -446,11 +564,20 @@
 
 .wallet-summary {
   background: #FFFFFF;
-  border: 1px solid #E5E7EB;
-  border-radius: 24px;
+  border: 3px solid #000000;
+  border-radius: 32px;
   padding: 32px 24px;
   margin-bottom: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 20px 40px rgba(0, 0, 0, 0.03);
+  box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 1);
+}
+
+/* iPhone 16 Pro対応 */
+@media screen and (max-width: 430px) {
+  .wallet-summary {
+    padding: 24px 20px;
+    border-radius: 24px;
+    box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  }
 }
 
 .wallet-summary-main {
@@ -459,18 +586,26 @@
 }
 
 .wallet-summary-label {
-  font-size: 0.8em;
+  font-size: 0.85em;
   color: #6B7280;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
 }
 
 .wallet-summary-value {
-  font-size: 2em;
+  font-size: 2.2em;
   font-weight: 700;
   color: #74ACDF;
+  letter-spacing: -0.02em;
+}
+
+/* iPhone 16 Pro対応 */
+@media screen and (max-width: 430px) {
+  .wallet-summary-value {
+    font-size: 2em;
+  }
 }
 
 .wallet-summary-subtext {
@@ -487,41 +622,59 @@
 
 .wallet-summary-savings {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding: 20px;
-  background: #FFFFFF;
-  border: 2px solid #10B981;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.1);
+  gap: 8px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.02) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 16px;
+  text-align: center;
 }
 
 .wallet-summary-savings-icon {
-  font-size: 2em;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #D1FAE5;
-  border-radius: 50%;
+  font-size: 1.5em;
+  display: block;
+  opacity: 0.8;
 }
 
 .wallet-summary-savings-content {
-  flex: 1;
+  width: 100%;
 }
 
 .wallet-summary-savings-label {
-  font-size: 0.85em;
-  color: #6B7280;
-  margin-bottom: 6px;
-  font-weight: 600;
+  font-size: 0.75em;
+  color: #059669;
+  margin-bottom: 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .wallet-summary-savings-value {
   font-size: 1.3em;
   font-weight: 700;
   color: #10B981;
+  display: block;
+}
+
+/* iPhone 16 Pro対応 */
+@media screen and (max-width: 430px) {
+  .wallet-summary-savings {
+    padding: 14px;
+  }
+
+  .wallet-summary-savings-icon {
+    font-size: 1.3em;
+  }
+
+  .wallet-summary-savings-label {
+    font-size: 0.7em;
+  }
+
+  .wallet-summary-savings-value {
+    font-size: 1.2em;
+  }
 }
 
 /* ============================================================================
@@ -706,21 +859,33 @@
 
 .execution-result-button {
   width: 100%;
-  padding: 16px 24px;
-  font-size: 1em;
-  font-weight: 600;
+  padding: 18px 24px;
+  font-size: 1.05em;
+  font-weight: 700;
   cursor: pointer;
-  border: 2px solid #74ACDF;
-  border-radius: 12px;
+  border: 3px solid #000000;
+  border-radius: 50px;
   background: #74ACDF;
   color: #FFFFFF;
-  transition: all 0.2s;
+  transition: all 0.15s;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
 }
 
 .execution-result-button:hover {
   background: #5A94CB;
-  border-color: #5A94CB;
-  transform: translateY(-1px);
+}
+
+.execution-result-button:active {
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+  transform: translate(2px, 2px);
+}
+
+/* iPhone 16 Pro対応 */
+@media screen and (max-width: 430px) {
+  .execution-result-button {
+    padding: 16px 20px;
+    font-size: 1em;
+  }
 }
 
 /* ============================================================================
@@ -807,9 +972,18 @@
 /* Timeline Card (AI Proposal Log) */
 .timeline-card {
   background: #FFFFFF;
-  border: 1px solid #E5E7EB;
-  border-radius: 16px;
+  border: 3px solid #000000;
+  border-radius: 24px;
   padding: 20px;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+}
+
+/* iPhone 16 Pro対応 */
+@media screen and (max-width: 430px) {
+  .timeline-card {
+    padding: 18px;
+    border-radius: 20px;
+  }
 }
 
 .timeline-card-header {
@@ -979,9 +1153,18 @@
 
 .history-item {
   background: #FFFFFF;
-  border: 1px solid #E5E7EB;
-  border-radius: 16px;
+  border: 3px solid #000000;
+  border-radius: 24px;
   padding: 20px;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+}
+
+/* iPhone 16 Pro対応 */
+@media screen and (max-width: 430px) {
+  .history-item {
+    padding: 18px;
+    border-radius: 20px;
+  }
 }
 
 .history-item-header {
@@ -1126,10 +1309,19 @@
 
 .settings-section {
   background: #FFFFFF;
-  border: 1px solid #E5E7EB;
-  border-radius: 16px;
+  border: 3px solid #000000;
+  border-radius: 24px;
   padding: 24px;
   margin-bottom: 20px;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+}
+
+/* iPhone 16 Pro対応 */
+@media screen and (max-width: 430px) {
+  .settings-section {
+    padding: 20px;
+    border-radius: 20px;
+  }
 }
 
 .settings-section-title {
@@ -1291,21 +1483,25 @@
 
 .settings-save-button {
   width: 100%;
-  padding: 16px 24px;
-  font-size: 1em;
-  font-weight: 600;
+  padding: 18px 24px;
+  font-size: 1.05em;
+  font-weight: 700;
   background: #74ACDF;
   color: #FFFFFF;
-  border: 2px solid #74ACDF;
-  border-radius: 12px;
+  border: 3px solid #000000;
+  border-radius: 50px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
 }
 
 .settings-save-button:hover:not(:disabled) {
   background: #5A94CB;
-  border-color: #5A94CB;
-  transform: translateY(-1px);
+}
+
+.settings-save-button:active:not(:disabled) {
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+  transform: translate(2px, 2px);
 }
 
 .settings-save-button:disabled {
@@ -1313,22 +1509,43 @@
   cursor: not-allowed;
 }
 
+/* iPhone 16 Pro対応 */
+@media screen and (max-width: 430px) {
+  .settings-save-button {
+    padding: 16px 20px;
+    font-size: 1em;
+  }
+}
+
 .settings-button-secondary {
   width: 100%;
-  padding: 14px 20px;
-  font-size: 0.95em;
-  font-weight: 600;
+  padding: 16px 20px;
+  font-size: 1em;
+  font-weight: 700;
   background: #FFFFFF;
-  color: #6B7280;
-  border: 2px solid #E5E7EB;
-  border-radius: 12px;
+  color: #1A1A1A;
+  border: 3px solid #000000;
+  border-radius: 50px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
 }
 
 .settings-button-secondary:hover {
-  background: #F9FAFB;
-  border-color: #D1D5DB;
+  background: #F0F0F0;
+}
+
+.settings-button-secondary:active {
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+  transform: translate(2px, 2px);
+}
+
+/* iPhone 16 Pro対応 */
+@media screen and (max-width: 430px) {
+  .settings-button-secondary {
+    padding: 14px 18px;
+    font-size: 0.95em;
+  }
 }
 
 .settings-info-field {

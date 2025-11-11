@@ -5,8 +5,10 @@
 import { useState, useEffect } from 'react';
 import type { SalarySettings } from '../types';
 import { getSettings, updateSettings } from '../api/salary';
+import { useAuth } from '../contexts/AuthContext';
 
 export function SettingsScreen() {
+  const { walletAddress, user } = useAuth();
   const [settings, setSettings] = useState<SalarySettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -155,35 +157,48 @@ export function SettingsScreen() {
 
           <div className="settings-section-content">
             <div className="settings-info-field">
-              <div className="settings-info-label">アドレス</div>
+              <div className="settings-info-label">アドレス (CDP Embedded Wallet)</div>
               <div className="settings-info-value settings-info-value-mono">
-                {settings.walletAddress}
+                {walletAddress || '接続されていません'}
               </div>
             </div>
 
+            {user?.userId && (
+              <div className="settings-info-field">
+                <div className="settings-info-label">User ID</div>
+                <div className="settings-info-value settings-info-value-mono">
+                  {user.userId}
+                </div>
+              </div>
+            )}
+
             <div className="settings-info-field">
               <div className="settings-info-label">ネットワーク</div>
-              <div className="settings-info-value">{settings.network}</div>
+              <div className="settings-info-value">
+                {settings?.network || 'Polygon Amoy (Testnet)'}
+              </div>
             </div>
 
             <div className="settings-info-field">
               <div className="settings-info-label">接続状態</div>
               <div className="settings-info-value">
-                <span className="settings-status-badge settings-status-badge-connected">
-                  ✓ 接続済み
+                <span className={`settings-status-badge ${walletAddress ? 'settings-status-badge-connected' : 'settings-status-badge-disconnected'}`}>
+                  {walletAddress ? '✓ 接続済み' : '✗ 未接続'}
                 </span>
               </div>
             </div>
 
-            <button
-              className="settings-button-secondary"
-              onClick={() => {
-                navigator.clipboard.writeText(settings.walletAddress);
-                alert('📋 アドレスをコピーしました');
-              }}
-            >
-              📋 アドレスをコピー
-            </button>
+            {walletAddress && (
+              <button
+                className="settings-button-secondary"
+                onClick={() => {
+                  navigator.clipboard.writeText(walletAddress);
+                  alert('📋 アドレスをコピーしました');
+                }}
+              >
+                📋 アドレスをコピー
+              </button>
+            )}
           </div>
         </section>
 

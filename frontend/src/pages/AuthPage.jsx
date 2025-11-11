@@ -1,80 +1,44 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useEvmAddress } from '@coinbase/cdp-hooks';
+import { AuthButton } from '@coinbase/cdp-react/components/AuthButton';
 
 function AuthPage() {
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const { login } = useAuth();
+  const { evmAddress } = useEvmAddress();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+  // URLパラメータからシナリオを取得
+  const params = new URLSearchParams(window.location.search);
+  const scenario = params.get('scenario');
 
-    if (!email || !email.includes('@')) {
-      setError('有効なメールアドレスを入力してください');
-      return;
+  // ウォレットアドレスが取得できたらホーム画面へ遷移
+  useEffect(() => {
+    if (evmAddress) {
+      const targetPath = scenario ? `/home?scenario=${scenario}` : '/home';
+      navigate(targetPath);
     }
-
-    setLoading(true);
-
-    try {
-      await login(email);
-      navigate('/home');
-    } catch (err) {
-      setError('ログインに失敗しました。もう一度お試しください。');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [evmAddress, navigate, scenario]);
 
   return (
     <div className="auth-page">
       <div className="auth-container">
         <div className="auth-header">
-          <h1 className="auth-title">💼 Porteño</h1>
+          <h1 className="auth-title">💱 Camb.ai</h1>
           <p className="auth-subtitle">給料を守るスマートウォレット</p>
         </div>
 
         <div className="auth-card">
-          <form onSubmit={handleSubmit}>
-            <div className="auth-form-group">
-              <label htmlFor="email" className="auth-label">
-                メールアドレス
-              </label>
-              <input
-                id="email"
-                type="email"
-                className="auth-input"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-
-            {error && (
-              <div className="auth-error">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="auth-button"
-              disabled={loading}
-            >
-              {loading ? '処理中...' : 'ログイン / サインアップ'}
-            </button>
-          </form>
+          <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+            <h2 style={{ marginBottom: '1rem', fontSize: '1.5rem' }}>サインインして始める</h2>
+            <p style={{ marginBottom: '2rem', color: '#666' }}>
+              メールアドレスで認証すると、あなた専用の AI スマートウォレットを自動生成します
+            </p>
+            <AuthButton />
+          </div>
 
           <div className="auth-description">
             <p>
-              ログインすると、あなた専用の AI スマートウォレットを自動生成します
-              <br />
-              （シードフレーズ不要・ガスレス）。
+              シードフレーズ不要・ガスレスで、安全にウォレットを作成できます。
             </p>
           </div>
         </div>

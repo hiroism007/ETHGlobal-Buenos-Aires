@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ExecutionResultCard } from './ExecutionResultCard';
+import { useAuth } from '../contexts/AuthContext';
+import { apiClient } from '../api/client';
 
 // デモモード用のモックレスポンス関数
 function getMockResponse(type, proposal) {
@@ -7,14 +9,14 @@ function getMockResponse(type, proposal) {
     reason: `今回このタイミングで提案した理由を説明しますね。
 
 ・採用レート：${proposal.bestRateSource}（${proposal.bestRateArsPerUsdc.toLocaleString()} ARS）
-・ガス代：${proposal.gasFeeArs} POL（低め）
+・ガス代：${proposal.gasFeeArs} PoL（低め）
 ・お得額：+${Math.floor(proposal.convertAmountArs * 0.034).toLocaleString()} ARS（3.4%）
 
 BLUE/MEP/CCL を比較し、最も効率の良い条件でした。`,
 
-    rate_detail: '各レートの詳細を表にまとめました。現在のBLUEレートは過去7日間の平均より2.1%高く、最適なタイミングです。',
+    rate_detail: '各レートの詳細を表にまとめました。BLUEレートが他の市場（MEP・CCL）より有利で、最もお得にUSDCを獲得できます。',
 
-    chart: '過去7日間のレート推移をグラフ化しました。BLUEレートは上昇トレンドにあり、今日が絶好のタイミングです。',
+    chart: '過去7日間のレート推移をグラフ化しました。BLUEレートが安定的に有利な水準を維持しており、今日が絶好のタイミングです。',
 
     execute: `了解しました！${proposal.convertAmountArs.toLocaleString()} ARSを${proposal.amountUsdc} USDCに変換します。実行ボタンを押してください。`,
 
@@ -27,11 +29,24 @@ BLUE/MEP/CCL を比較し、最も効率の良い条件でした。`,
 }
 
 function ChatScreen() {
+  const { user, walletAddress } = useAuth();
+
+  // チャットシナリオを確認（best or wait）
+  const chatScenario = localStorage.getItem('chatScenario') || 'best';
+
+  // シナリオ別の初期メッセージ
+  const getInitialMessage = () => {
+    if (chatScenario === 'wait') {
+      return 'こんにちは！Camb.aiです。今日はまだ条件が整っていないので様子見をおすすめしています。設定の確認や変更、現在のレートの確認ができます。';
+    }
+    return 'こんにちは！Camb.aiです。給料の管理や提案について相談できます。';
+  };
+
   const [messages, setMessages] = useState([
     {
       id: 1,
       type: 'ai',
-      text: 'こんにちは！Porteñoです。給料の管理や提案について相談できます。',
+      text: getInitialMessage(),
       timestamp: new Date()
     }
   ]);
@@ -39,11 +54,16 @@ function ChatScreen() {
   const messagesEndRef = useRef(null);
   const [currentProposal, setCurrentProposal] = useState(null);
   const [executionCompleted, setExecutionCompleted] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(false);
 
   /**
    * プリロードされた提案を確認して、提案カードとAI説明メッセージを追加
+   * ※ bestシナリオの場合のみ
    */
   useEffect(() => {
+    // waitシナリオの場合はプリロード提案を無視
+    if (chatScenario === 'wait') return;
+
     const preloadedProposal = localStorage.getItem('preloadProposal');
     if (preloadedProposal) {
       try {
@@ -78,7 +98,7 @@ function ChatScreen() {
         console.error('プリロード提案の解析に失敗:', err);
       }
     }
-  }, []);
+  }, [chatScenario]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -88,30 +108,53 @@ function ChatScreen() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = () => {
-    if (!inputText.trim()) return;
+  const handleSend = async () => {
+    if (!inputText.trim() || !user?.userId) return;
+
+    const messageText = inputText;
+    setInputText('');
 
     // ユーザーメッセージを追加
     const userMessage = {
-      id: messages.length + 1,
+      id: Date.now(),
       type: 'user',
-      text: inputText,
+      text: messageText,
       timestamp: new Date()
     };
 
-    setMessages([...messages, userMessage]);
-    setInputText('');
+    setMessages(prev => [...prev, userMessage]);
 
-    // モックAI応答（実際にはここでAPIを呼び出す）
-    setTimeout(() => {
-      const aiResponse = {
-        id: messages.length + 2,
-        type: 'ai',
-        text: getAIResponse(inputText),
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, aiResponse]);
-    }, 1000);
+    try {
+      // 実際のAPIを呼び出す
+      const response = await apiClient.sendChatMessage({
+        userId: user.userId,
+        message: messageText
+      });
+
+      // AI応答を追加
+      setTimeout(() => {
+        const aiResponse = {
+          id: Date.now() + 1,
+          type: 'ai',
+          text: response.reply,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, aiResponse]);
+      }, 500);
+    } catch (error) {
+      console.error('Chat API error:', error);
+
+      // エラー時はモック応答にフォールバック
+      setTimeout(() => {
+        const aiResponse = {
+          id: Date.now() + 1,
+          type: 'ai',
+          text: getAIResponse(messageText),
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, aiResponse]);
+      }, 500);
+    }
   };
 
   const getAIResponse = (userInput) => {
@@ -127,6 +170,76 @@ function ChatScreen() {
       return '今月は1回の変換を実行しました。詳細は履歴画面で確認できます。';
     } else {
       return 'ご質問ありがとうございます。給料の管理、為替レート、変換設定などについてお答えできます。';
+    }
+  };
+
+  // waitシナリオ専用のアクションハンドラー
+  const handleWaitAction = (actionType) => {
+    const timestamp = new Date();
+
+    switch (actionType) {
+      case 'change_ratio':
+        // AIメッセージを追加
+        setTimeout(() => {
+          const aiMessage = {
+            id: Date.now(),
+            type: 'ai',
+            text: '了解しました。ドル化割合を 60% に更新しました。\n\n次回の給料日から、給料の60%が自動的にUSDCに変換されます。',
+            timestamp
+          };
+          setMessages(prev => [...prev, aiMessage]);
+        }, 150);
+        break;
+
+      case 'change_payday':
+        // AIメッセージを追加
+        setTimeout(() => {
+          const aiMessage = {
+            id: Date.now(),
+            type: 'ai',
+            text: '給料日を毎月25日に変更しました。\n\n次回の給料日は来月25日です。その日にレートとガス代を監視して、最適なタイミングで提案します。',
+            timestamp
+          };
+          setMessages(prev => [...prev, aiMessage]);
+        }, 150);
+        break;
+
+      case 'current_rate':
+        // AIメッセージを追加
+        setTimeout(() => {
+          const aiMessage = {
+            id: Date.now(),
+            type: 'ai',
+            text: '現在のレート状況をお伝えしますね。',
+            timestamp
+          };
+          setMessages(prev => [...prev, aiMessage]);
+
+          // レート表メッセージを追加
+          setTimeout(() => {
+            const waitRateTableMessage = {
+              id: Date.now() + 1,
+              type: 'wait_rate_table',
+              timestamp: new Date()
+            };
+            setMessages(prev => [...prev, waitRateTableMessage]);
+
+            // 追加の説明メッセージ
+            setTimeout(() => {
+              const followUpMessage = {
+                id: Date.now() + 2,
+                type: 'ai',
+                text: 'BLUEレートが他の市場より有利ですが、ガス代が高めです。もう少し待つことをおすすめします。',
+                timestamp: new Date()
+              };
+              setMessages(prev => [...prev, followUpMessage]);
+            }, 150);
+          }, 150);
+        }, 150);
+        break;
+
+      default:
+        return;
     }
   };
 
@@ -186,7 +299,7 @@ function ChatScreen() {
 
       case 'execute':
         // AIメッセージを追加
-        setTimeout(() => {
+        setTimeout(async () => {
           const aiMessage = {
             id: Date.now(),
             type: 'ai',
@@ -195,38 +308,120 @@ function ChatScreen() {
           };
           setMessages(prev => [...prev, aiMessage]);
 
-          // 実行結果メッセージを追加（1秒後）
-          setTimeout(() => {
-            const executionResult = {
-              id: Date.now() + 1,
-              type: 'execution_result',
-              proposal: currentProposal,
-              result: {
-                txHash: '0x' + Math.random().toString(16).substr(2, 64),
-                actualAmountUsdc: currentProposal.amountUsdc,
-                executedAt: new Date().toISOString()
-              },
-              timestamp: new Date()
-            };
-            setMessages(prev => [...prev, executionResult]);
-            // 実行完了フラグを立てる
-            setExecutionCompleted(true);
-          }, 1000);
+          try {
+            // POST /execute (action=confirm) を呼び出す
+            if (!user?.userId || !walletAddress) {
+              throw new Error('User not authenticated');
+            }
+
+            // proposalIdを取得（currentProposalにない場合は新規作成）
+            let proposalId = currentProposal.proposalId;
+            if (!proposalId) {
+              const proposeResponse = await apiClient.createPropose({
+                userId: user.userId
+              });
+              proposalId = proposeResponse.proposalId;
+            }
+
+            // TODO: ARS送金のtxHashを取得（現在は仮実装）
+            const arsTxHash = '0x' + Math.random().toString(16).substr(2, 64);
+
+            // 提案を実行
+            const executeResponse = await apiClient.executePropose({
+              userId: user.userId,
+              proposalId: proposalId,
+              action: 'confirm',
+              userWalletAddress: walletAddress,
+              arsTxHash: arsTxHash
+            });
+
+            // 実行結果メッセージを追加
+            setTimeout(() => {
+              const executionResult = {
+                id: Date.now() + 1,
+                type: 'execution_result',
+                proposal: currentProposal,
+                result: {
+                  txHash: executeResponse.txHash,
+                  explorerUrl: executeResponse.explorerUrl,
+                  actualAmountUsdc: currentProposal.amountUsdc,
+                  executedAt: new Date().toISOString()
+                },
+                timestamp: new Date()
+              };
+              setMessages(prev => [...prev, executionResult]);
+              // 実行完了フラグを立てる
+              setExecutionCompleted(true);
+            }, 1000);
+          } catch (error) {
+            console.error('Execute API error:', error);
+
+            // エラー時はモック応答
+            setTimeout(() => {
+              const executionResult = {
+                id: Date.now() + 1,
+                type: 'execution_result',
+                proposal: currentProposal,
+                result: {
+                  txHash: '0x' + Math.random().toString(16).substr(2, 64),
+                  actualAmountUsdc: currentProposal.amountUsdc,
+                  executedAt: new Date().toISOString()
+                },
+                timestamp: new Date()
+              };
+              setMessages(prev => [...prev, executionResult]);
+              setExecutionCompleted(true);
+            }, 1000);
+          }
         }, 150);
         break;
 
       case 'skip':
         // AIメッセージを追加
-        setTimeout(() => {
-          const aiMessage = {
-            id: Date.now(),
-            type: 'ai',
-            text: getMockResponse('skip', currentProposal),
-            timestamp
-          };
-          setMessages(prev => [...prev, aiMessage]);
-          // スキップ後も深掘りメニューを非表示
-          setExecutionCompleted(true);
+        setTimeout(async () => {
+          try {
+            if (!user?.userId) {
+              throw new Error('User not authenticated');
+            }
+
+            // proposalIdを取得
+            let proposalId = currentProposal.proposalId;
+            if (!proposalId) {
+              const proposeResponse = await apiClient.createPropose({
+                userId: user.userId
+              });
+              proposalId = proposeResponse.proposalId;
+            }
+
+            // POST /execute (action=skip) を呼び出す
+            await apiClient.executePropose({
+              userId: user.userId,
+              proposalId: proposalId,
+              action: 'skip'
+            });
+
+            const aiMessage = {
+              id: Date.now(),
+              type: 'ai',
+              text: getMockResponse('skip', currentProposal),
+              timestamp
+            };
+            setMessages(prev => [...prev, aiMessage]);
+            // スキップ後も深掘りメニューを非表示
+            setExecutionCompleted(true);
+          } catch (error) {
+            console.error('Skip API error:', error);
+
+            // エラー時もメッセージを表示
+            const aiMessage = {
+              id: Date.now(),
+              type: 'ai',
+              text: getMockResponse('skip', currentProposal),
+              timestamp
+            };
+            setMessages(prev => [...prev, aiMessage]);
+            setExecutionCompleted(true);
+          }
         }, 150);
         break;
 
@@ -246,8 +441,14 @@ function ChatScreen() {
       {/* チャットメッセージ */}
       <div className="chat-messages">
         {messages.map((message) => {
-          // レート表メッセージ
+          // レート表メッセージ（bestシナリオ）
           if (message.type === 'rate_table') {
+            // 固定のARS額から各レートでの受取額を計算
+            const arsAmount = message.proposal.convertAmountArs;
+            const blueRate = message.proposal.bestRateArsPerUsdc;
+            const mepRate = blueRate * 1.02; // BLUEより2%不利
+            const cclRate = blueRate * 1.04; // BLUEより4%不利
+
             return (
               <div key={message.id} className="rate-table-card">
                 <div className="rate-table-header">📊 レート比較表</div>
@@ -255,28 +456,75 @@ function ChatScreen() {
                   <thead>
                     <tr>
                       <th>レート種別</th>
-                      <th>1 USDC</th>
-                      <th>受取額</th>
+                      <th>1 USDC =</th>
+                      <th>受取USDC</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr className="rate-table-row-best">
-                      <td>BLUE（採用）</td>
-                      <td>{message.proposal.bestRateArsPerUsdc.toLocaleString()} ARS</td>
-                      <td>{message.proposal.amountUsdc.toFixed(2)} USDC</td>
+                      <td>BLUE ✓</td>
+                      <td>{blueRate.toLocaleString(undefined, {maximumFractionDigits: 1})} ARS</td>
+                      <td>{(arsAmount / blueRate).toFixed(2)} USDC</td>
                     </tr>
                     <tr>
                       <td>MEP</td>
-                      <td>{(message.proposal.bestRateArsPerUsdc * 0.98).toLocaleString()} ARS</td>
-                      <td>{(message.proposal.amountUsdc * 0.98).toFixed(2)} USDC</td>
+                      <td>{mepRate.toLocaleString(undefined, {maximumFractionDigits: 1})} ARS</td>
+                      <td>{(arsAmount / mepRate).toFixed(2)} USDC</td>
                     </tr>
                     <tr>
                       <td>CCL</td>
-                      <td>{(message.proposal.bestRateArsPerUsdc * 0.96).toLocaleString()} ARS</td>
-                      <td>{(message.proposal.amountUsdc * 0.96).toFixed(2)} USDC</td>
+                      <td>{cclRate.toLocaleString(undefined, {maximumFractionDigits: 1})} ARS</td>
+                      <td>{(arsAmount / cclRate).toFixed(2)} USDC</td>
                     </tr>
                   </tbody>
                 </table>
+                <div className="rate-table-note">
+                  💡 BLUEレートが最も有利（少ないARSでより多くのUSDCを獲得）
+                </div>
+              </div>
+            );
+          }
+
+          // レート表メッセージ（waitシナリオ）
+          if (message.type === 'wait_rate_table') {
+            // waitシナリオ用の現在レート
+            const blueRate = 1285.2;
+            const mepRate = 1310.9;
+            const cclRate = 1336.6;
+            const arsAmount = 72000; // サンプル金額
+
+            return (
+              <div key={message.id} className="rate-table-card">
+                <div className="rate-table-header">📊 現在のレート</div>
+                <table className="rate-table">
+                  <thead>
+                    <tr>
+                      <th>レート種別</th>
+                      <th>1 USDC =</th>
+                      <th>受取USDC (72,000 ARS)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="rate-table-row-best">
+                      <td>BLUE ✓</td>
+                      <td>{blueRate.toLocaleString(undefined, {maximumFractionDigits: 1})} ARS</td>
+                      <td>{(arsAmount / blueRate).toFixed(2)} USDC</td>
+                    </tr>
+                    <tr>
+                      <td>MEP</td>
+                      <td>{mepRate.toLocaleString(undefined, {maximumFractionDigits: 1})} ARS</td>
+                      <td>{(arsAmount / mepRate).toFixed(2)} USDC</td>
+                    </tr>
+                    <tr>
+                      <td>CCL</td>
+                      <td>{cclRate.toLocaleString(undefined, {maximumFractionDigits: 1})} ARS</td>
+                      <td>{(arsAmount / cclRate).toFixed(2)} USDC</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div className="rate-table-note">
+                  ⚠️ ガス代: 0.045 PoL（通常より高め）
+                </div>
               </div>
             );
           }
@@ -336,7 +584,7 @@ function ChatScreen() {
                   </div>
                   <div className="chat-proposal-meta-divider">•</div>
                   <div className="chat-proposal-meta-item">
-                    ガス代: {message.proposal.gasFeeArs} POL
+                    ガス代: {message.proposal.gasFeeArs} PoL
                   </div>
                 </div>
               </div>
@@ -526,40 +774,96 @@ function ChatScreen() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* クイックアクションボタン（提案がある場合かつ実行未完了の場合のみ） */}
-      {currentProposal && !executionCompleted && (
+      {/* クイックアクションボタン（bestシナリオ：提案がある場合かつ実行未完了の場合のみ） */}
+      {chatScenario === 'best' && currentProposal && !executionCompleted && (
         <div className="chat-quick-actions">
-          <div className="chat-quick-actions-title">深掘りメニュー</div>
-          <div className="chat-quick-action-buttons">
-            <button
-              className="chat-quick-action chat-quick-action-primary"
-              onClick={() => handleQuickAction('rate_detail')}
-            >
-              <span className="chat-quick-action-icon">📊</span>
-              レートの内訳も教えて
-            </button>
-            <button
-              className="chat-quick-action chat-quick-action-primary"
-              onClick={() => handleQuickAction('chart')}
-            >
-              <span className="chat-quick-action-icon">📈</span>
-              チャートを見せて
-            </button>
-            <button
-              className="chat-quick-action chat-quick-action-success"
-              onClick={() => handleQuickAction('execute')}
-            >
-              <span className="chat-quick-action-icon">✓</span>
-              この条件で実行する
-            </button>
-            <button
-              className="chat-quick-action chat-quick-action-secondary"
-              onClick={() => handleQuickAction('skip')}
-            >
-              <span className="chat-quick-action-icon">↩</span>
-              今回はスキップ
-            </button>
-          </div>
+          <button
+            className="chat-quick-actions-toggle"
+            onClick={() => setShowQuickActions(!showQuickActions)}
+          >
+            <span className="chat-quick-actions-toggle-icon">
+              {showQuickActions ? '▼' : '▶'}
+            </span>
+            <span className="chat-quick-actions-toggle-text">
+              {showQuickActions ? '深掘りメニューを閉じる' : '💡 ここから深掘りできます'}
+            </span>
+          </button>
+
+          {showQuickActions && (
+            <div className="chat-quick-action-buttons">
+              <button
+                className="chat-quick-action chat-quick-action-primary"
+                onClick={() => handleQuickAction('rate_detail')}
+              >
+                <span className="chat-quick-action-icon">📊</span>
+                レートの内訳も教えて
+              </button>
+              <button
+                className="chat-quick-action chat-quick-action-primary"
+                onClick={() => handleQuickAction('chart')}
+              >
+                <span className="chat-quick-action-icon">📈</span>
+                チャートを見せて
+              </button>
+              <button
+                className="chat-quick-action chat-quick-action-success"
+                onClick={() => handleQuickAction('execute')}
+              >
+                <span className="chat-quick-action-icon">✓</span>
+                この条件で実行する
+              </button>
+              <button
+                className="chat-quick-action chat-quick-action-secondary"
+                onClick={() => handleQuickAction('skip')}
+              >
+                <span className="chat-quick-action-icon">↩</span>
+                今回はスキップ
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* クイックアクションボタン（waitシナリオ：設定変更や現在レート確認） */}
+      {chatScenario === 'wait' && (
+        <div className="chat-quick-actions">
+          <button
+            className="chat-quick-actions-toggle"
+            onClick={() => setShowQuickActions(!showQuickActions)}
+          >
+            <span className="chat-quick-actions-toggle-icon">
+              {showQuickActions ? '▼' : '▶'}
+            </span>
+            <span className="chat-quick-actions-toggle-text">
+              {showQuickActions ? '設定メニューを閉じる' : '⚙️ 設定変更・確認'}
+            </span>
+          </button>
+
+          {showQuickActions && (
+            <div className="chat-quick-action-buttons">
+              <button
+                className="chat-quick-action chat-quick-action-primary"
+                onClick={() => handleWaitAction('change_ratio')}
+              >
+                <span className="chat-quick-action-icon">💵</span>
+                給料の割合を変更したい
+              </button>
+              <button
+                className="chat-quick-action chat-quick-action-primary"
+                onClick={() => handleWaitAction('change_payday')}
+              >
+                <span className="chat-quick-action-icon">📅</span>
+                給料日を変えたい
+              </button>
+              <button
+                className="chat-quick-action chat-quick-action-primary"
+                onClick={() => handleWaitAction('current_rate')}
+              >
+                <span className="chat-quick-action-icon">📊</span>
+                今日のレートを知りたい
+              </button>
+            </div>
+          )}
         </div>
       )}
 
