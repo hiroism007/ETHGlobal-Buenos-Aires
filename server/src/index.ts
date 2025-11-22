@@ -11,6 +11,7 @@ import { authConfig } from './lib/auth-config'
 import chatRoute from './routes/chat'
 import salaryRoute from './routes/salary'
 import mockRoute from './routes/mock'
+import authRoute from './routes/auth'
 
 dotenv.config()
 
@@ -32,6 +33,7 @@ app.use('/api/auth/*', authHandler())
 app.route('/api/chat', chatRoute)
 app.route('/api/salary', salaryRoute)
 app.route('/api/mock', mockRoute)
+app.route('/api/auth/wallet', authRoute)
 
 app.get('/', (c) => {
   return c.text('DolarBlue Agent Server is running!')

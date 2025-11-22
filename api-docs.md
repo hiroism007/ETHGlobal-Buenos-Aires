@@ -2,7 +2,38 @@
 
 Base URL: `http://localhost:3001` (Server)
 
-## 1. Settings (設定関連)
+## 1. Authentication (認証関連)
+
+Embedded Wallet (Smart Wallet) を使用したサインインフロー。
+
+### POST /auth/wallet/login
+ウォレット署名を使用してログイン（または新規登録）を行います。
+
+**Request Body**
+```json
+{
+  "address": "0x1234...",  // Smart Wallet Address
+  "signature": "0xabcd..." // "Login to DolarBlue" というメッセージへの署名
+}
+```
+
+**Response (200 OK)**
+```json
+{
+  "userId": "user-123",      // 以降のAPIコールで使用するID
+  "isNewUser": false,        // 新規ユーザーだったかどうか
+  "address": "0x1234..."
+}
+```
+
+**Frontend Implementation Note:**
+1. Coinbase SDKで `connect()` してアドレス取得。
+2. `signMessage("Login to DolarBlue")` を実行。
+3. このAPIに送って `userId` を取得し、Local Storage等に保存する。
+
+---
+
+## 2. Settings (設定関連)
 
 給料日の設定やドル化割合の設定を管理します。
 
