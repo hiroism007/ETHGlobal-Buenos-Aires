@@ -1,0 +1,42 @@
+{
+    "name": "server",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "dev": "tsx watch src/index.ts",
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "lint": "echo 'Linting skipped'"
+    },
+    "dependencies": {
+        "@auth/core": "^0.37.0",
+        "@auth/prisma-adapter": "^2.11.1",
+        "@coinbase/agentkit": "^0.10.3",
+        "@coinbase/agentkit-langchain": "^0.3.0",
+        "@coinbase/cdp-sdk": "^1.38.6",
+        "@hono/auth-js": "^1.0.0",
+        "@hono/node-server": "^1.13.7",
+        "@langchain/core": "^0.3.18",
+        "@langchain/openai": "^0.3.14",
+        "@prisma/client": "^5.22.0",
+        "@zoralabs/coins-sdk": "^0.3.3",
+        "@zoralabs/protocol-deployments": "^0.6.4",
+        "decimal.js": "^10.6.0",
+        "dotenv": "^16.4.7",
+        "hono": "^4.6.14",
+        "langchain": "^0.3.6",
+        "openai": "^6.9.1",
+        "prisma": "^5.22.0",
+        "viem": "^2.39.3",
+        "x402": "^0.7.3",
+        "x402-fetch": "^0.7.3",
+        "zod": "^4.1.12",
+        "zod-to-json-schema": "^3.25.0"
+    },
+    "devDependencies": {
+        "@types/node": "^24.10.1",
+        "tsx": "^4.19.2",
+        "typescript": "^5.9.3"
+    }
+}
