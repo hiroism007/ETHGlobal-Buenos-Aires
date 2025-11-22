@@ -17,7 +17,7 @@
 
 ### 1.2 アーキテクチャ概要
 
-バックエンドはNext.js API Routes (Vercel Serverless Functions) 上に構築されることを想定する。
+バックエンドは Hono (Node.js) 上に構築されることを想定する。
 
 ```mermaid
 graph TD
@@ -29,7 +29,7 @@ graph TD
 
     %% ==== Backend ====
     subgraph Backend
-        API[API Routes]
+        API[Hono API Server]
 
         subgraph AgentCore
             AS[AgentService - AgentKit]
@@ -88,7 +88,7 @@ graph TD
 
 実装速度を優先し、トランザクション実行主体を明確化する。
 
-1. **CDP Embedded Wallet (User)**: フロントエンド管理。ユーザー資産の保管場所。ドル化の**受取先**。
+1. **CDP Embedded Wallet (User)**: フロントエンド管理（Smart Wallet）。ユーザー資産の保管場所。ドル化の**受取先**およびARS送金元。認証（Login）にも使用。
 2. **CDP Server Wallet (Agent)**: バックエンド管理。秘密鍵管理不要。x402支払いとUSDC送金の**実行主体**。
 
 ## 2. 技術スタックと環境設定
@@ -98,6 +98,7 @@ graph TD
 | **領域** | **技術/ライブラリ** | **バージョン（推奨）** | **役割** |
 | --- | --- | --- | --- |
 | ランタイム/言語 | Node.js / TypeScript | 22.x / 5.x | 実行環境 |
+| Web Framework | Hono | 最新 | 軽量APIサーバー |
 | Agent Core | `@coinbase/agentkit` | 最新 | Agentフレームワーク |
 | CDP連携 | `@coinbase/cdp-sdk` | 最新 | Server Wallet操作 |
 | x402 Buyer | `x402-fetch` | 最新 | 402支払い自動化ヘルパー |

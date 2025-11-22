@@ -34,7 +34,8 @@
 ## 4. 機能要件 (Functional Requirements)
 
 ### 4.1 認証とユーザー管理
-*   **認証基盤:** NextAuth.js (v5 beta) を使用。
+*   **認証基盤:** Hono + viem (SIWE-like flow) を使用。
+    *   MVPではNextAuth.jsではなく、Smart Walletによる署名認証を採用しました。
 *   **ID 管理:** ユーザーごとに一意の ID (`userId`) を発行し、SalaryRule や Proposal を紐付けます。
 *   **ウォレット連携:** ユーザーの受取用アドレス (`embeddedWalletAddress`) を管理します。
 
@@ -99,34 +100,38 @@
 
 ## 6. API インターフェース (API Interface)
 
-### 6.1 Chat & Agent
+### 6.1 Authentication
+*   `POST /api/auth/wallet/login`
+    *   **Body:** `{ address: string, signature: string }`
+    *   **Response:** `{ userId: string, isNewUser: boolean, address: string }`
+
+### 6.2 Chat & Agent
 *   `POST /api/chat`
     *   **Body:** `{ userId: string, message: string }`
-    *   **Response:** `{ reply: string, actionsPerformed: Array }`
-    *   **Note:** 現在の実装ではライブラリの問題によりモック応答を返す場合があります。
+    *   **Response:** `{ reply: string }`
 
-### 6.2 Salary Settings
+### 6.3 Salary Settings
 *   `GET /api/salary/settings` (Query: `userId`)
 *   `POST /api/salary/settings`
     *   **Body:** `{ userId: string, dayOfMonth: number, convertPercent: number }`
 
-### 6.3 Automation & Execution
+### 6.4 Automation & Execution
 *   `POST /api/salary/propose`
     *   **Body:** `{ userId: string }`
     *   **Action:** ARS 実行 -> 提案生成 -> DB 保存。
     *   **Response:** `{ proposalId, assistantText, details }`
 *   `POST /api/salary/execute`
-    *   **Body:** `{ userId: string, proposalId: string, action: "confirm"|"skip", userWalletAddress: string }`
+    *   **Body:** `{ userId: string, proposalId: string, action: "confirm"|"skip", userWalletAddress: string, arsTxHash?: string }`
     *   **Action:** USDC 送金 (confirm 時) -> ステータス更新。
     *   **Response:** `{ status, txHash, explorerUrl }`
 
-### 6.4 Mock Rates (x402 Enabled)
+### 6.5 Mock Rates (x402 Enabled)
 *   `GET /api/mock/rate/{blue,mep,ccl}`
     *   **Behavior:** 初回アクセス時は `402 Payment Required` を返し、支払いが確認されるとレート情報 (JSON) を返します。
 
 ## 7. 技術スタック (Tech Stack)
 
-*   **Backend Framework:** Next.js 15 (App Router)
+*   **Backend Framework:** Hono (Lightweight Web Framework)
 *   **Runtime:** Node.js
 *   **Language:** TypeScript
 *   **Database:** SQLite (Development / MVP)
