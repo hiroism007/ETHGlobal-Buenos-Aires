@@ -60,7 +60,7 @@ export class ProposalService {
         return { proposalId: proposal.id, assistantText, details };
     }
 
-    async executeProposal(userId: string, proposalId: string, userWalletAddress: Address) {
+    async executeProposal(userId: string, proposalId: string, userWalletAddress: Address, arsTxHash?: string) {
         const proposal = await this.prisma.proposal.findUnique({ where: { id: proposalId, userId } });
         if (!proposal || proposal.status !== ProposalStatus.PENDING) {
             throw new Error("Invalid proposal state.");
@@ -68,6 +68,12 @@ export class ProposalService {
 
         // Parse JSON string from SQLite
         const rawDetails = JSON.parse(proposal.details) as any;
+        
+        // If arsTxHash is provided, add it to details
+        if (arsTxHash) {
+            rawDetails.arsTxHash = arsTxHash;
+        }
+
         const amountUsdcDecimal = new Decimal(rawDetails.amountUsdc);
 
         // 1. Execute USDC Transfer (Server Wallet -> User Embedded Wallet)
@@ -82,6 +88,7 @@ export class ProposalService {
             data: {
                 status: ProposalStatus.EXECUTED,
                 txHash,
+                details: JSON.stringify(rawDetails),
                 executedAt: new Date()
             }
         });

@@ -72,13 +72,13 @@ app.post('/execute', async (c) => {
             return c.json({ error: validation.error.issues }, 400)
         }
 
-        const { userId, proposalId, action, userWalletAddress } = validation.data
+        const { userId, proposalId, action, userWalletAddress, arsTxHash } = validation.data
 
         if (action === 'confirm') {
             if (!userWalletAddress) {
                 return c.json({ error: 'userWalletAddress required for confirm' }, 400)
             }
-            const result = await proposalService.executeProposal(userId, proposalId, userWalletAddress)
+            const result = await proposalService.executeProposal(userId, proposalId, userWalletAddress, arsTxHash)
             return c.json(result)
         } else {
             const result = await proposalService.skipProposal(proposalId)

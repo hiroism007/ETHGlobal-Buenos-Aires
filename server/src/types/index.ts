@@ -51,5 +51,7 @@ export const ExecuteRequestDTO = z.object({
     // ユーザーのEmbedded Walletアドレス（送金先）
     userWalletAddress: z.string().refine((val): val is string => /^0x[a-fA-F0-9]{40}$/.test(val), {
         message: "Invalid Ethereum address",
-    }).transform(val => val as Address),
+    }).transform(val => val as Address).optional(),
+    // ARS送金のTxHash（確認時用）
+    arsTxHash: z.string().optional(),
 });
