@@ -54,7 +54,7 @@ export function DashboardScreen() {
   const isPayday = true; // デモ用に固定: true にすると常に給料日として扱う
 
   // 未読の提案通知があるかどうか（デモモードでは常に表示）
-  const [hasUnreadProposal, setHasUnreadProposal] = useState(DEMO_MODE || true);
+  const [hasUnreadProposal, setHasUnreadProposal] = useState(false);
 
   /**
    * 初期データ取得
@@ -279,22 +279,20 @@ export function DashboardScreen() {
           <div className="hero-card hero-card-active">
             {/* AIが提案したタイムスタンプ */}
             <div className="proposal-timestamp">
-              AIが給料のドル化タイミングを提案しました（
-              {new Date(homeState.proposal.createdAt).toLocaleDateString('ja-JP', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-              })}{' '}
-              {new Date(homeState.proposal.createdAt).toLocaleTimeString('ja-JP', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-              ）
-            </div>
-
-            <div className="hero-card-badge">
-              <span className="hero-card-badge-icon">✨</span>
-              <span className="hero-card-badge-text">今がチャンス！</span>
+              <div className="proposal-timestamp-message">
+                AIが給料のドル化タイミングを提案しました
+              </div>
+              <div className="proposal-timestamp-date">
+                {new Date(homeState.proposal.createdAt).toLocaleDateString('ja-JP', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                })}{' '}
+                {new Date(homeState.proposal.createdAt).toLocaleTimeString('ja-JP', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </div>
             </div>
 
             <h3 className="hero-card-title-active">
@@ -330,7 +328,7 @@ export function DashboardScreen() {
               </div>
               <div className="hero-card-meta-divider">•</div>
               <div className="hero-card-meta-item">
-                ガス代: {homeState.proposal.gasFeeArs} ARS
+                ガス代: {homeState.proposal.gasFeeArs} POL
               </div>
             </div>
 

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { ExecutionResultCard } from './ExecutionResultCard';
 
 // デモモード用のモックレスポンス関数
 function getMockResponse(type, proposal) {
@@ -6,7 +7,7 @@ function getMockResponse(type, proposal) {
     reason: `今回このタイミングで提案した理由を説明しますね。
 
 ・採用レート：${proposal.bestRateSource}（${proposal.bestRateArsPerUsdc.toLocaleString()} ARS）
-・ガス代：${proposal.gasFeeArs} ARS（低め）
+・ガス代：${proposal.gasFeeArs} POL（低め）
 ・お得額：+${Math.floor(proposal.convertAmountArs * 0.034).toLocaleString()} ARS（3.4%）
 
 BLUE/MEP/CCL を比較し、最も効率の良い条件でした。`,
@@ -37,9 +38,10 @@ function ChatScreen() {
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef(null);
   const [currentProposal, setCurrentProposal] = useState(null);
+  const [executionCompleted, setExecutionCompleted] = useState(false);
 
   /**
-   * プリロードされた提案を確認して、AI説明メッセージを追加
+   * プリロードされた提案を確認して、提案カードとAI説明メッセージを追加
    */
   useEffect(() => {
     const preloadedProposal = localStorage.getItem('preloadProposal');
@@ -48,16 +50,26 @@ function ChatScreen() {
         const proposal = JSON.parse(preloadedProposal);
         setCurrentProposal(proposal);
 
-        // AI説明メッセージを作成（getMockResponseを使用）
+        // まず提案カードを表示
         setTimeout(() => {
-          const explanationMessage = {
+          const proposalCardMessage = {
             id: Date.now(),
-            type: 'ai',
-            text: getMockResponse('reason', proposal),
+            type: 'proposal_card',
+            proposal: proposal,
             timestamp: new Date()
           };
+          setMessages(prev => [...prev, proposalCardMessage]);
 
-          setMessages(prev => [...prev, explanationMessage]);
+          // 次にAI説明メッセージを表示
+          setTimeout(() => {
+            const explanationMessage = {
+              id: Date.now() + 1,
+              type: 'ai',
+              text: getMockResponse('reason', proposal),
+              timestamp: new Date()
+            };
+            setMessages(prev => [...prev, explanationMessage]);
+          }, 300);
         }, 150); // 150msディレイでフェードイン効果
 
         // localStorageをクリア
@@ -182,6 +194,24 @@ function ChatScreen() {
             timestamp
           };
           setMessages(prev => [...prev, aiMessage]);
+
+          // 実行結果メッセージを追加（1秒後）
+          setTimeout(() => {
+            const executionResult = {
+              id: Date.now() + 1,
+              type: 'execution_result',
+              proposal: currentProposal,
+              result: {
+                txHash: '0x' + Math.random().toString(16).substr(2, 64),
+                actualAmountUsdc: currentProposal.amountUsdc,
+                executedAt: new Date().toISOString()
+              },
+              timestamp: new Date()
+            };
+            setMessages(prev => [...prev, executionResult]);
+            // 実行完了フラグを立てる
+            setExecutionCompleted(true);
+          }, 1000);
         }, 150);
         break;
 
@@ -195,6 +225,8 @@ function ChatScreen() {
             timestamp
           };
           setMessages(prev => [...prev, aiMessage]);
+          // スキップ後も深掘りメニューを非表示
+          setExecutionCompleted(true);
         }, 150);
         break;
 
@@ -245,6 +277,81 @@ function ChatScreen() {
                     </tr>
                   </tbody>
                 </table>
+              </div>
+            );
+          }
+
+          // 提案カードメッセージ
+          if (message.type === 'proposal_card') {
+            return (
+              <div key={message.id} className="chat-proposal-card">
+                {/* タイムスタンプ */}
+                <div className="chat-proposal-timestamp">
+                  <div className="chat-proposal-timestamp-message">
+                    AIが給料のドル化タイミングを提案しました
+                  </div>
+                  <div className="chat-proposal-timestamp-date">
+                    {new Date(message.proposal.createdAt).toLocaleDateString('ja-JP', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                    })}{' '}
+                    {new Date(message.proposal.createdAt).toLocaleTimeString('ja-JP', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </div>
+                </div>
+
+                <h3 className="chat-proposal-title">
+                  今日の給料をドル化しましょう
+                </h3>
+
+                <div className="chat-proposal-conversion">
+                  <div className="chat-proposal-amount">
+                    <span className="chat-proposal-amount-label">変換額</span>
+                    <span className="chat-proposal-amount-value">
+                      {message.proposal.convertAmountArs.toLocaleString()}
+                      <span className="chat-proposal-amount-currency">ARS</span>
+                    </span>
+                  </div>
+                  <div className="chat-proposal-arrow">→</div>
+                  <div className="chat-proposal-amount">
+                    <span className="chat-proposal-amount-label">受取額</span>
+                    <span className="chat-proposal-amount-value chat-proposal-amount-value-usdc">
+                      {message.proposal.amountUsdc.toFixed(2)}
+                      <span className="chat-proposal-amount-currency">USDC</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div className="chat-proposal-reason">
+                  <div className="chat-proposal-reason-icon">💡</div>
+                  <div className="chat-proposal-reason-text">{message.proposal.reason}</div>
+                </div>
+
+                <div className="chat-proposal-meta">
+                  <div className="chat-proposal-meta-item">
+                    レート: {message.proposal.bestRateArsPerUsdc.toLocaleString()} ARS
+                  </div>
+                  <div className="chat-proposal-meta-divider">•</div>
+                  <div className="chat-proposal-meta-item">
+                    ガス代: {message.proposal.gasFeeArs} POL
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // 実行結果メッセージ
+          if (message.type === 'execution_result') {
+            return (
+              <div key={message.id}>
+                <ExecutionResultCard
+                  proposal={message.proposal}
+                  result={message.result}
+                  onClose={() => {}}
+                />
               </div>
             );
           }
@@ -419,8 +526,8 @@ function ChatScreen() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* クイックアクションボタン（提案がある場合のみ） */}
-      {currentProposal && (
+      {/* クイックアクションボタン（提案がある場合かつ実行未完了の場合のみ） */}
+      {currentProposal && !executionCompleted && (
         <div className="chat-quick-actions">
           <div className="chat-quick-actions-title">深掘りメニュー</div>
           <div className="chat-quick-action-buttons">

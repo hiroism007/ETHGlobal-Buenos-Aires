@@ -152,7 +152,7 @@ export function HistoryScreen() {
                   </div>
                   <div className="history-item-detail">
                     <span className="history-item-detail-label">ガス代:</span>
-                    <span className="history-item-detail-value">{tx.gasPaid} ARS</span>
+                    <span className="history-item-detail-value">{tx.gasPaid} POL</span>
                   </div>
                 </div>
 
