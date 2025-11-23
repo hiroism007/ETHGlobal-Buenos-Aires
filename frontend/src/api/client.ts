@@ -65,6 +65,22 @@ export interface ExecuteResponse {
   explorerUrl?: string;
 }
 
+export interface SettingsRequest {
+  userId: string;
+  dayOfMonth?: number;
+  convertPercent?: number;
+}
+
+export interface SettingsResponse {
+  id: string;
+  userId: string;
+  dayOfMonth: number;
+  convertPercent: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 /**
@@ -177,6 +193,22 @@ export const apiClient = {
       body: JSON.stringify(data),
     });
     return handleResponse<ExecuteResponse>(response);
+  },
+
+  /**
+   * 設定を更新（新API）
+   * POST /settings
+   */
+  async updateUserSettings(data: SettingsRequest): Promise<SettingsResponse> {
+    const response = await fetch(`${API_BASE_URL}/settings`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+    return handleResponse<SettingsResponse>(response);
   },
 
   /**

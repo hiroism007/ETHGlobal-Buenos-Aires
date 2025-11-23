@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthPage from './pages/AuthPage';
 import TabNavigation from './components/TabNavigation';
 import { DashboardScreen } from './pages/DashboardScreen';
+import { WaitScenarioScreen } from './pages/WaitScenarioScreen';
 import { SettingsScreen } from './pages/SettingsScreen';
 import { HistoryScreen } from './pages/HistoryScreen';
 import ChatScreen from './components/ChatScreen';
@@ -37,10 +38,20 @@ function MainApp() {
     return () => window.removeEventListener('switchTab', handleSwitchTab);
   }, []);
 
-  const renderScreen = () => {
+  // URLパラメータからシナリオを取得して localStorage に保存
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const scenario = params.get('scenario');
+    if (scenario) {
+      localStorage.setItem('chatScenario', scenario);
+      console.log('[MainApp] Scenario saved to localStorage:', scenario);
+    }
+  }, []);
+
+  const renderScreen = (isWaitScenario = false) => {
     switch (activeTab) {
       case 'home':
-        return <DashboardScreen />;
+        return isWaitScenario ? <WaitScenarioScreen /> : <DashboardScreen />;
       case 'chat':
         return <ChatScreen />;
       case 'settings':
@@ -48,7 +59,55 @@ function MainApp() {
       case 'history':
         return <HistoryScreen />;
       default:
-        return <DashboardScreen />;
+        return isWaitScenario ? <WaitScenarioScreen /> : <DashboardScreen />;
+    }
+  };
+
+  return (
+    <div className="app">
+      <div className="content">
+        {renderScreen(false)}
+      </div>
+
+      <TabNavigation
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
+    </div>
+  );
+}
+
+function WaitMainApp() {
+  const [activeTab, setActiveTab] = useState('home');
+
+  // カスタムイベントでタブ切り替えを受け取る
+  useEffect(() => {
+    const handleSwitchTab = (event) => {
+      setActiveTab(event.detail);
+    };
+
+    window.addEventListener('switchTab', handleSwitchTab);
+    return () => window.removeEventListener('switchTab', handleSwitchTab);
+  }, []);
+
+  // wait シナリオを localStorage に保存
+  useEffect(() => {
+    localStorage.setItem('chatScenario', 'wait');
+    console.log('[WaitMainApp] Scenario set to: wait');
+  }, []);
+
+  const renderScreen = () => {
+    switch (activeTab) {
+      case 'home':
+        return <WaitScenarioScreen />;
+      case 'chat':
+        return <ChatScreen />;
+      case 'settings':
+        return <SettingsScreen />;
+      case 'history':
+        return <HistoryScreen />;
+      default:
+        return <WaitScenarioScreen />;
     }
   };
 
@@ -83,6 +142,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <MainApp />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/home-wait"
+            element={
+              <ProtectedRoute>
+                <WaitMainApp />
               </ProtectedRoute>
             }
           />

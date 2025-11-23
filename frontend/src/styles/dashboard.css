@@ -304,41 +304,72 @@
 /* Active Proposal Card */
 .hero-card-active {
   background: #FFFFFF;
-  border: 2px solid #74ACDF;
-  box-shadow: 0 4px 6px rgba(116, 172, 223, 0.1), 0 20px 40px rgba(116, 172, 223, 0.08);
+  border: 3px solid #000000;
+  border-radius: 32px;
+  padding: 32px 28px;
+  box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 1);
+  margin-bottom: 20px;
 }
 
 .proposal-timestamp {
-  margin-bottom: 16px;
+  margin-bottom: 24px;
   text-align: center;
   padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
 }
 
 .proposal-timestamp-message {
-  font-size: 0.75em;
-  color: #9CA3AF;
-  font-weight: 600;
-  margin-bottom: 4px;
+  font-size: 1.15em;
+  color: #FFFFFF;
+  font-weight: 800;
+  line-height: 1.4;
+  margin: 0 auto;
+  background: #FF9800;
+  border: 3px solid #000000;
+  border-radius: 14px;
+  padding: 14px 24px;
+  display: block;
+  box-shadow: 5px 5px 0px 0px rgba(0, 0, 0, 1);
+  letter-spacing: 0.3px;
+  max-width: fit-content;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .proposal-timestamp-date {
-  font-size: 0.7em;
-  color: #D1D5DB;
+  font-size: 0.85em;
+  color: #6B7280;
   font-weight: 600;
+  font-family: 'Monaco', 'Courier New', monospace;
+  margin: 0;
 }
 
 /* iPhone 16 Pro対応 */
 @media screen and (max-width: 430px) {
+  .hero-card-active {
+    padding: 24px 20px;
+    border-radius: 24px;
+    box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  }
+
   .proposal-timestamp {
-    margin-bottom: 12px;
+    margin-bottom: 20px;
+    gap: 8px;
   }
 
   .proposal-timestamp-message {
-    font-size: 0.7em;
+    font-size: 1.05em;
+    padding: 12px 18px;
   }
 
   .proposal-timestamp-date {
-    font-size: 0.65em;
+    font-size: 0.75em;
   }
 }
 
@@ -543,19 +574,29 @@
 }
 
 .hero-card-ask-why-button {
-  background: none;
-  border: none;
-  color: #74ACDF;
-  font-size: 0.95em;
-  font-weight: 600;
+  background: #000000;
+  border: 3px solid #000000;
+  color: #FFFFFF;
+  font-size: 1em;
+  font-weight: 700;
   cursor: pointer;
-  padding: 12px;
-  margin-top: 8px;
-  transition: color 0.2s;
+  padding: 16px 24px;
+  margin-top: 16px;
+  border-radius: 16px;
+  width: 100%;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s;
 }
 
 .hero-card-ask-why-button:hover {
-  color: #5A94CB;
+  background: #1A1A1A;
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 0.3);
+}
+
+.hero-card-ask-why-button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 0.3);
 }
 
 /* ============================================================================

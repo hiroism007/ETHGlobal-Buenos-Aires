@@ -12,6 +12,9 @@ export function SettingsScreen() {
   const [settings, setSettings] = useState<SalarySettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [currentScenario, setCurrentScenario] = useState<'best' | 'wait'>(
+    (localStorage.getItem('chatScenario') as 'best' | 'wait') || 'best'
+  );
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -40,6 +43,12 @@ export function SettingsScreen() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleScenarioChange = (scenario: 'best' | 'wait') => {
+    setCurrentScenario(scenario);
+    localStorage.setItem('chatScenario', scenario);
+    alert(`✓ シナリオを「${scenario === 'best' ? 'ベスト提案' : '様子見'}」に変更しました`);
   };
 
   if (loading) {

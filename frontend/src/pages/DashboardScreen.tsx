@@ -3,6 +3,7 @@
 // ============================================================================
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { Proposal, SalarySettings, WalletSummary } from '../types';
 import { createProposal, getSettings, executeProposal, getWalletSummary } from '../api/salary';
 import { ExecutionResultCard } from '../components/ExecutionResultCard';
@@ -29,13 +30,25 @@ type HomeState =
 
 export function DashboardScreen() {
   const { user, walletAddress } = useAuth();
+  const [searchParams] = useSearchParams();
 
   // デモモードフラグ
   const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
 
+  // デバッグ: URL全体を確認
+  console.log('Current URL:', window.location.href);
+  console.log('Search params:', window.location.search);
+  console.log('searchParams.get("scenario"):', searchParams.get('scenario'));
+  console.log('All searchParams:', Array.from(searchParams.entries()));
+
   // URLパラメータからシナリオを取得
-  const params = new URLSearchParams(window.location.search);
-  const scenario = params.get('scenario') || 'best'; // デフォルトは best
+  const scenario = searchParams.get('scenario') || 'best'; // デフォルトは best
+
+  // シナリオをlocalStorageに保存（ChatScreenで使用）
+  useEffect(() => {
+    localStorage.setItem('chatScenario', scenario);
+    console.log('Scenario set to:', scenario); // デバッグ用
+  }, [scenario]);
 
   // デモモード用のモック提案データ
   const mockProposal: Proposal = {
@@ -417,7 +430,7 @@ export function DashboardScreen() {
             {/* AIが提案したタイムスタンプ */}
             <div className="proposal-timestamp">
               <div className="proposal-timestamp-message">
-                AIが給料のドル化タイミングを提案しました
+                🤖 Camb.aiが給料の<br />ドル化タイミングを提案しました
               </div>
               <div className="proposal-timestamp-date">
                 {new Date(homeState.proposal.createdAt).toLocaleDateString('ja-JP', {
@@ -484,12 +497,12 @@ export function DashboardScreen() {
               </button>
             </div>
 
-            {/* AIに理由を詳しく聞くボタン */}
+            {/* Camb.aiに理由を詳しく聞くボタン */}
             <button
               className="hero-card-ask-why-button"
               onClick={() => handleAskWhy(homeState.proposal)}
             >
-              理由を詳しく聞く ▶
+              🤖 Camb.aiに理由を詳しく聞く
             </button>
           </div>
         )}
