@@ -1,14 +1,16 @@
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 
 function TabNavigation({ activeTab, onTabChange }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
 
   const tabs = [
-    { id: 'home', icon: '🏠', label: 'ホーム', route: '/home' },
-    { id: 'chat', icon: '💬', label: 'チャット', route: '/chat' },
-    { id: 'settings', icon: '⚙️', label: '設定' },
-    { id: 'history', icon: '📜', label: '履歴' }
+    { id: 'home', icon: '🏠', label: t('home'), route: '/home' },
+    { id: 'chat', icon: '💬', label: t('chat'), route: '/chat' },
+    { id: 'settings', icon: '⚙️', label: t('settings') },
+    { id: 'history', icon: '📜', label: t('history') }
   ];
 
   const handleTabClick = (tab) => {

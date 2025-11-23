@@ -3,6 +3,7 @@
 // ============================================================================
 
 import type { Proposal } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ExecuteResult {
   txHash: string;
@@ -17,10 +18,12 @@ interface Props {
 }
 
 export function ExecutionResultCard({ proposal, result, onClose }: Props) {
+  const { t, language } = useLanguage();
+
   // txHashをクリップボードにコピー
   const handleCopyTxHash = () => {
     navigator.clipboard.writeText(result.txHash);
-    alert('📋 TxHashをコピーしました');
+    alert(`📋 ${t('copyTxHash')}`);
   };
 
   // 推定節約額を計算（簡易版：レート差を仮定）
@@ -31,7 +34,7 @@ export function ExecutionResultCard({ proposal, result, onClose }: Props) {
   const explorerUrl = `https://amoy.polygonscan.com/tx/${result.txHash}`;
 
   // 日時フォーマット
-  const executedDate = new Date(result.executedAt).toLocaleString('ja-JP', {
+  const executedDate = new Date(result.executedAt).toLocaleString(language === 'ja' ? 'ja-JP' : 'en-US', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -45,19 +48,19 @@ export function ExecutionResultCard({ proposal, result, onClose }: Props) {
       <div className="execution-result-icon">🎉</div>
 
       {/* タイトル */}
-      <h2 className="execution-result-title">給料をドル化しました</h2>
+      <h2 className="execution-result-title">{t('executionSuccess')}</h2>
 
       {/* メイン数字 */}
       <div className="execution-result-main">
         <div className="execution-result-conversion">
           <span className="execution-result-amount-from">
             {proposal.convertAmountArs.toLocaleString()}
-            <span className="execution-result-currency">ARS</span>
+            <span className="execution-result-currency">{t('ars')}</span>
           </span>
           <span className="execution-result-arrow">→</span>
           <span className="execution-result-amount-to">
             {result.actualAmountUsdc.toFixed(2)}
-            <span className="execution-result-currency">USDC</span>
+            <span className="execution-result-currency">{t('usdc')}</span>
           </span>
         </div>
       </div>
@@ -66,9 +69,9 @@ export function ExecutionResultCard({ proposal, result, onClose }: Props) {
       <div className="execution-result-savings">
         <div className="execution-result-savings-icon">💰</div>
         <div className="execution-result-savings-content">
-          <div className="execution-result-savings-label">本日の節約</div>
+          <div className="execution-result-savings-label">{t('todaysSavings')}</div>
           <div className="execution-result-savings-value">
-            +{estimatedSavingsArs.toLocaleString()} ARS
+            +{estimatedSavingsArs.toLocaleString()} {t('ars')}
             <span className="execution-result-savings-percent">
               ({savingsPercent}%)
             </span>
@@ -79,13 +82,13 @@ export function ExecutionResultCard({ proposal, result, onClose }: Props) {
       {/* 実行情報 */}
       <div className="execution-result-info">
         <div className="execution-result-info-row">
-          <span className="execution-result-info-label">実行日時</span>
+          <span className="execution-result-info-label">{t('executedAt')}</span>
           <span className="execution-result-info-value">{executedDate}</span>
         </div>
         <div className="execution-result-info-row">
-          <span className="execution-result-info-label">レート</span>
+          <span className="execution-result-info-label">{t('rate')}</span>
           <span className="execution-result-info-value">
-            {proposal.bestRateSource} {proposal.bestRateArsPerUsdc.toLocaleString()} ARS
+            {proposal.bestRateSource} {proposal.bestRateArsPerUsdc.toLocaleString()} {t('ars')}
           </span>
         </div>
       </div>
@@ -116,7 +119,7 @@ export function ExecutionResultCard({ proposal, result, onClose }: Props) {
         onClick={onClose}
         className="execution-result-button"
       >
-        ホームに戻る
+        {t('backToHome')}
       </button>
     </div>
   );

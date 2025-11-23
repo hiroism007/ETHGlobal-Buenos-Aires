@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import type { Proposal } from '../types';
 import { apiClient } from '../api/client';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Props {
   onProposalCreated?: (proposal: Proposal) => void;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function PaydayProposalCard({ onProposalCreated, onOpenDetails }: Props) {
+  const { language } = useLanguage();
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [loading, setLoading] = useState(false);
   const [executing, setExecuting] = useState(false);
@@ -110,7 +112,9 @@ export function PaydayProposalCard({ onProposalCreated, onOpenDetails }: Props) 
       </div>
 
       <div className="payday-proposal-message">
-        {proposal.reason}
+        {language === 'ja'
+          ? 'ガス代が低く、BLUEレートが他の市場（MEP・CCL）より有利です。今が変換の好機です。'
+          : 'Gas fees are low, and the BLUE rate is more favorable than other markets (MEP・CCL). Now is a great time to convert.'}
       </div>
 
       <div className="payday-proposal-conversion">

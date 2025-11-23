@@ -3,6 +3,7 @@
 // ============================================================================
 
 import type { Proposal, RateTableRow } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Props {
   proposal: Proposal | null;
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function ProposalDetailSheet({ proposal, isOpen, onClose }: Props) {
+  const { language } = useLanguage();
   if (!isOpen) return null;
 
   if (!proposal) {
@@ -166,8 +168,12 @@ export function ProposalDetailSheet({ proposal, isOpen, onClose }: Props) {
 
           {/* AIの判断理由 */}
           <section className="detail-sheet-section">
-            <h4 className="detail-sheet-section-title">🤖 AIの判断</h4>
-            <div className="ai-reason-card">{proposal.reason}</div>
+            <h4 className="detail-sheet-section-title">🤖 {language === 'ja' ? 'AIの判断' : "AI's Decision"}</h4>
+            <div className="ai-reason-card">
+              {language === 'ja'
+                ? 'ガス代が低く、BLUEレートが他の市場（MEP・CCL）より有利です。今が変換の好機です。'
+                : 'Gas fees are low, and the BLUE rate is more favorable than other markets (MEP・CCL). Now is a great time to convert.'}
+            </div>
           </section>
 
           {/* 技術スタック */}

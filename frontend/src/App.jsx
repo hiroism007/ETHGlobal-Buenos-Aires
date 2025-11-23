@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import './styles/dashboard.css';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import AuthPage from './pages/AuthPage';
 import TabNavigation from './components/TabNavigation';
 import { DashboardScreen } from './pages/DashboardScreen';
@@ -174,38 +175,40 @@ function ChatApp() {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/auth" element={<AuthPage />} />
-          <Route
-            path="/home"
-            element={
-              <ProtectedRoute>
-                <MainApp />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/chat"
-            element={
-              <ProtectedRoute>
-                <ChatApp />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/home-wait"
-            element={
-              <ProtectedRoute>
-                <WaitMainApp />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/" element={<RootRedirect />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/auth" element={<AuthPage />} />
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute>
+                  <MainApp />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                <ProtectedRoute>
+                  <ChatApp />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/home-wait"
+              element={
+                <ProtectedRoute>
+                  <WaitMainApp />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/" element={<RootRedirect />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 

@@ -6,9 +6,11 @@ import { useState, useEffect } from 'react';
 import type { SalarySettings } from '../types';
 import { getSettings, updateSettings } from '../api/salary';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export function SettingsScreen() {
   const { walletAddress, user } = useAuth();
+  const { t, language } = useLanguage();
   const [settings, setSettings] = useState<SalarySettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -37,9 +39,9 @@ export function SettingsScreen() {
     setSaving(true);
     try {
       await updateSettings(settings);
-      alert('✓ 設定を保存しました');
+      alert(t('settingsSaved'));
     } catch (error) {
-      alert('❌ 保存に失敗しました');
+      alert(`❌ ${t('saveError')}`);
     } finally {
       setSaving(false);
     }
@@ -54,7 +56,7 @@ export function SettingsScreen() {
   if (loading) {
     return (
       <div className="settings-screen">
-        <div className="settings-loading">読み込み中...</div>
+        <div className="settings-loading">{t('loading')}</div>
       </div>
     );
   }
@@ -62,7 +64,7 @@ export function SettingsScreen() {
   if (!settings) {
     return (
       <div className="settings-screen">
-        <div className="settings-error">設定の読み込みに失敗しました</div>
+        <div className="settings-error">{t('settingsLoadError')}</div>
       </div>
     );
   }
@@ -70,18 +72,18 @@ export function SettingsScreen() {
   return (
     <div className="settings-screen">
       <header className="settings-header">
-        <h1 className="settings-title">⚙️ 設定</h1>
+        <h1 className="settings-title">⚙️ {t('settingsHeader')}</h1>
       </header>
 
       <div className="settings-content">
         {/* セクション1: 自動ドル化ルール */}
         <section className="settings-section">
-          <h2 className="settings-section-title">💵 自動ドル化ルール</h2>
+          <h2 className="settings-section-title">💵 {t('autoConversionRules')}</h2>
 
           <div className="settings-section-content">
             <div className="settings-field">
               <label className="settings-label" htmlFor="paymentDay">
-                給料日
+                {t('payday')}
               </label>
               <select
                 id="paymentDay"
@@ -96,7 +98,7 @@ export function SettingsScreen() {
               >
                 {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
                   <option key={day} value={day}>
-                    毎月 {day}日
+                    {t('everyMonth')} {day}{t('day')}
                   </option>
                 ))}
               </select>
@@ -104,7 +106,7 @@ export function SettingsScreen() {
 
             <div className="settings-field">
               <label className="settings-label" htmlFor="convertPercent">
-                ドル化割合: {settings.convertPercent}%
+                {t('conversionRatio')}: {settings.convertPercent}%
               </label>
               <input
                 id="convertPercent"
@@ -130,9 +132,9 @@ export function SettingsScreen() {
 
             <div className="settings-toggle-field">
               <div className="settings-toggle-label">
-                <div className="settings-toggle-title">自動ドル化</div>
+                <div className="settings-toggle-title">{t('autoConversion')}</div>
                 <div className="settings-toggle-description">
-                  給料日に自動的に提案を実行
+                  {t('autoConversionDesc')}
                 </div>
               </div>
               <label className="settings-toggle">
@@ -155,26 +157,26 @@ export function SettingsScreen() {
               onClick={handleSave}
               disabled={saving}
             >
-              {saving ? '保存中...' : '設定を保存'}
+              {saving ? t('saving') : t('saveSettings')}
             </button>
           </div>
         </section>
 
         {/* セクション2: ウォレット情報 */}
         <section className="settings-section">
-          <h2 className="settings-section-title">💼 ウォレット情報</h2>
+          <h2 className="settings-section-title">💼 {t('walletInfo')}</h2>
 
           <div className="settings-section-content">
             <div className="settings-info-field">
-              <div className="settings-info-label">アドレス (CDP Embedded Wallet)</div>
+              <div className="settings-info-label">{t('address')}</div>
               <div className="settings-info-value settings-info-value-mono">
-                {walletAddress || '接続されていません'}
+                {walletAddress || t('disconnected')}
               </div>
             </div>
 
             {user?.userId && (
               <div className="settings-info-field">
-                <div className="settings-info-label">User ID</div>
+                <div className="settings-info-label">{t('userId')}</div>
                 <div className="settings-info-value settings-info-value-mono">
                   {user.userId}
                 </div>
@@ -182,17 +184,17 @@ export function SettingsScreen() {
             )}
 
             <div className="settings-info-field">
-              <div className="settings-info-label">ネットワーク</div>
+              <div className="settings-info-label">{t('network')}</div>
               <div className="settings-info-value">
                 {settings?.network || 'Polygon Amoy (Testnet)'}
               </div>
             </div>
 
             <div className="settings-info-field">
-              <div className="settings-info-label">接続状態</div>
+              <div className="settings-info-label">{t('connectionStatus')}</div>
               <div className="settings-info-value">
                 <span className={`settings-status-badge ${walletAddress ? 'settings-status-badge-connected' : 'settings-status-badge-disconnected'}`}>
-                  {walletAddress ? '✓ 接続済み' : '✗ 未接続'}
+                  {walletAddress ? `✓ ${t('connected')}` : `✗ ${t('disconnected')}`}
                 </span>
               </div>
             </div>
@@ -202,10 +204,10 @@ export function SettingsScreen() {
                 className="settings-button-secondary"
                 onClick={() => {
                   navigator.clipboard.writeText(walletAddress);
-                  alert('📋 アドレスをコピーしました');
+                  alert(`📋 ${t('addressCopied')}`);
                 }}
               >
-                📋 アドレスをコピー
+                📋 {t('copyAddress')}
               </button>
             )}
           </div>
@@ -213,16 +215,16 @@ export function SettingsScreen() {
 
         {/* セクション3: アプリ情報 */}
         <section className="settings-section">
-          <h2 className="settings-section-title">ℹ️ アプリ情報</h2>
+          <h2 className="settings-section-title">ℹ️ {t('appInfo')}</h2>
 
           <div className="settings-section-content">
             <div className="settings-info-field">
-              <div className="settings-info-label">バージョン</div>
+              <div className="settings-info-label">{t('version')}</div>
               <div className="settings-info-value">v1.0.0</div>
             </div>
 
             <div className="settings-info-field">
-              <div className="settings-info-label">環境</div>
+              <div className="settings-info-label">{t('environment')}</div>
               <div className="settings-info-value">
                 <span className="settings-env-badge">
                   {import.meta.env.MODE === 'production'
@@ -233,7 +235,7 @@ export function SettingsScreen() {
             </div>
 
             <div className="settings-info-field">
-              <div className="settings-info-label">ネットワーク</div>
+              <div className="settings-info-label">{t('network')}</div>
               <div className="settings-info-value">
                 {settings.network === 'amoy' ? 'Polygon Amoy (Testnet)' : settings.network}
               </div>

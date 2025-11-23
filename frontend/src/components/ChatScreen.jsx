@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { ExecutionResultCard } from './ExecutionResultCard';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../api/client';
+import { useLanguage } from '../contexts/LanguageContext';
+import LanguageToggle from './LanguageToggle';
 
 // デモモード用のモックレスポンス関数
-function getMockResponse(type, proposal) {
-  const responses = {
+function getMockResponse(type, proposal, language) {
+  const responsesJa = {
     reason: `今回このタイミングで提案した理由を説明しますね。
 
 ・採用レート：${proposal.bestRateSource}（${proposal.bestRateArsPerUsdc.toLocaleString()} ARS）
@@ -23,15 +25,41 @@ BLUE/MEP/CCL を比較し、最も効率の良い条件でした。`,
 
     skip: '了解しました。今回の提案はスキップします。次回より良い条件のときに、また提案させていただきますね。',
 
-    completed: '変換が完了しました！トランザクションはブロックチェーンに記録されました。ウォレットを確認してください。'
+    completed: '変換が完了しました！トランザクションはブロックチェーンに記録されました。ウォレットを確認してください。',
+
+    fallback: '申し訳ありません、理解できませんでした。'
   };
 
-  return responses[type] || '申し訳ありません、理解できませんでした。';
+  const responsesEn = {
+    reason: `Let me explain why I'm suggesting this timing:
+
+• Exchange Rate: ${proposal.bestRateSource} (${proposal.bestRateArsPerUsdc.toLocaleString()} ARS)
+• Gas Fee: ${proposal.gasFeeArs} PoL (low)
+• Savings: +${Math.floor(proposal.convertAmountArs * 0.034).toLocaleString()} ARS (3.4%)
+
+After comparing BLUE/MEP/CCL, these are the most efficient conditions.`,
+
+    rate_detail: 'Here\'s a detailed rate comparison table. The BLUE rate is more favorable than other markets (MEP・CCL), allowing you to get the most USDC.',
+
+    chart: 'Here\'s a chart of the rate trends over the past 7 days. The BLUE rate has maintained a consistently favorable level, making today the perfect timing.',
+
+    execute: `Got it! I'll convert ${proposal.convertAmountArs.toLocaleString()} ARS to ${proposal.amountUsdc} USDC. Please press the execute button.`,
+
+    skip: 'Understood. I\'ll skip this proposal. I\'ll suggest again when better conditions arise.',
+
+    completed: 'Conversion completed! The transaction has been recorded on the blockchain. Please check your wallet.',
+
+    fallback: 'Sorry, I didn\'t understand that.'
+  };
+
+  const responses = language === 'ja' ? responsesJa : responsesEn;
+  return responses[type] || responses.fallback;
 }
 
 function ChatScreen() {
   const { user, walletAddress } = useAuth();
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
 
   // チャットシナリオを状態として管理
   const [chatScenario, setChatScenario] = useState(localStorage.getItem('chatScenario') || 'best');
@@ -60,19 +88,35 @@ function ChatScreen() {
   // シナリオ別の初期メッセージ
   const getInitialMessage = () => {
     if (chatScenario === 'wait') {
-      return 'こんにちは！Camb.aiです。今日はまだ条件が整っていないので様子見をおすすめしています。設定の確認や変更、現在のレートの確認ができます。';
+      return language === 'ja'
+        ? 'こんにちは！Camb.aiです。今日はまだ条件が整っていないので様子見をおすすめしています。設定の確認や変更、現在のレートの確認ができます。'
+        : 'Hello! I\'m Camb.ai. The conditions aren\'t quite right yet today, so I recommend waiting. You can check or change your settings and view current rates.';
     }
-    return 'こんにちは！Camb.aiです。給料の管理や提案について相談できます。';
+    return language === 'ja'
+      ? 'こんにちは！Camb.aiです。給料の管理や提案について相談できます。'
+      : 'Hello! I\'m Camb.ai. I can help you manage your salary and provide conversion suggestions.';
   };
 
   const [messages, setMessages] = useState([
     {
       id: 1,
       type: 'ai',
-      text: getInitialMessage(),
+      text: '',
       timestamp: new Date()
     }
   ]);
+
+  // 言語が変更されたら初期メッセージを更新
+  useEffect(() => {
+    setMessages(prev => {
+      const newMessages = [...prev];
+      newMessages[0] = {
+        ...newMessages[0],
+        text: getInitialMessage()
+      };
+      return newMessages;
+    });
+  }, [language, chatScenario]);
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef(null);
   const [currentProposal, setCurrentProposal] = useState(null);
@@ -113,7 +157,7 @@ function ChatScreen() {
             const explanationMessage = {
               id: Date.now() + 1,
               type: 'ai',
-              text: getMockResponse('reason', proposal),
+              text: getMockResponse('reason', proposal, language),
               timestamp: new Date()
             };
             setMessages(prev => [...prev, explanationMessage]);
@@ -247,7 +291,7 @@ function ChatScreen() {
           const explanationMessage = {
             id: Date.now() + 3,
             type: 'ai',
-            text: getMockResponse('reason', proposal),
+            text: getMockResponse('reason', proposal, language),
             timestamp: new Date()
           };
           setMessages(prev => [...prev, explanationMessage]);
@@ -286,7 +330,7 @@ function ChatScreen() {
           const explanationMessage = {
             id: Date.now() + 3,
             type: 'ai',
-            text: getMockResponse('reason', mockProposal),
+            text: getMockResponse('reason', mockProposal, language),
             timestamp: new Date()
           };
           setMessages(prev => [...prev, explanationMessage]);
@@ -299,16 +343,30 @@ function ChatScreen() {
   const getAIResponse = (userInput) => {
     const input = userInput.toLowerCase();
 
-    if (input.includes('レート') || input.includes('為替')) {
-      return '現在の為替レートは 1 USD = 1,200 ARS です。過去1週間の平均より良いレートですよ！';
-    } else if (input.includes('変換') || input.includes('ドル')) {
-      return '給料の50%をUSDCに変換する設定になっています。変換を実行しますか？';
-    } else if (input.includes('設定')) {
-      return '給料日は毎月5日、変換割合は50%に設定されています。変更したい場合は設定画面からどうぞ。';
-    } else if (input.includes('履歴')) {
-      return '今月は1回の変換を実行しました。詳細は履歴画面で確認できます。';
+    if (language === 'ja') {
+      if (input.includes('レート') || input.includes('為替')) {
+        return '現在の為替レートは 1 USD = 1,200 ARS です。過去1週間の平均より良いレートですよ！';
+      } else if (input.includes('変換') || input.includes('ドル')) {
+        return '給料の50%をUSDCに変換する設定になっています。変換を実行しますか？';
+      } else if (input.includes('設定')) {
+        return '給料日は毎月5日、変換割合は50%に設定されています。変更したい場合は設定画面からどうぞ。';
+      } else if (input.includes('履歴')) {
+        return '今月は1回の変換を実行しました。詳細は履歴画面で確認できます。';
+      } else {
+        return 'ご質問ありがとうございます。給料の管理、為替レート、変換設定などについてお答えできます。';
+      }
     } else {
-      return 'ご質問ありがとうございます。給料の管理、為替レート、変換設定などについてお答えできます。';
+      if (input.includes('rate') || input.includes('exchange')) {
+        return 'The current exchange rate is 1 USD = 1,200 ARS. It\'s a better rate than the average over the past week!';
+      } else if (input.includes('convert') || input.includes('dollar')) {
+        return 'You\'re set to convert 50% of your salary to USDC. Would you like to execute the conversion?';
+      } else if (input.includes('setting')) {
+        return 'Your payday is set to the 5th of each month, with a 50% conversion ratio. You can change this in the settings screen.';
+      } else if (input.includes('history')) {
+        return 'You\'ve executed 1 conversion this month. You can see the details in the history screen.';
+      } else {
+        return 'Thank you for your question. I can help with salary management, exchange rates, conversion settings, and more.';
+      }
     }
   };
 
@@ -320,16 +378,12 @@ function ChatScreen() {
       case 'change_ratio':
         // ドル化割合を変更
         setTimeout(async () => {
-          // デモ用：API呼び出しをスキップして成功メッセージのみ表示
-          // await apiClient.updateUserSettings({
-          //   userId: user.userId,
-          //   convertPercent: 60
-          // });
-
           const aiMessage = {
             id: Date.now(),
             type: 'ai',
-            text: '了解しました。ドル化割合を 60% に更新しました。\n\n次回の給料日から、給料の60%が自動的にUSDCに変換されます。',
+            text: language === 'ja'
+              ? '了解しました。ドル化割合を 60% に更新しました。\n\n次回の給料日から、給料の60%が自動的にUSDCに変換されます。'
+              : 'Got it. I\'ve updated the conversion ratio to 60%.\n\nFrom the next payday, 60% of your salary will be automatically converted to USDC.',
             timestamp
           };
           setMessages(prev => [...prev, aiMessage]);
@@ -339,16 +393,12 @@ function ChatScreen() {
       case 'change_payday':
         // 給料日を変更
         setTimeout(async () => {
-          // デモ用：API呼び出しをスキップして成功メッセージのみ表示
-          // await apiClient.updateUserSettings({
-          //   userId: user.userId,
-          //   dayOfMonth: 25
-          // });
-
           const aiMessage = {
             id: Date.now(),
             type: 'ai',
-            text: '給料日を毎月25日に変更しました。\n\n次回の給料日は来月25日です。その日にレートとガス代を監視して、最適なタイミングで提案します。',
+            text: language === 'ja'
+              ? '給料日を毎月25日に変更しました。\n\n次回の給料日は来月25日です。その日にレートとガス代を監視して、最適なタイミングで提案します。'
+              : 'I\'ve changed your payday to the 25th of each month.\n\nYour next payday is the 25th of next month. I\'ll monitor rates and gas fees on that day to suggest the optimal timing.',
             timestamp
           };
           setMessages(prev => [...prev, aiMessage]);
@@ -361,7 +411,9 @@ function ChatScreen() {
           const aiMessage = {
             id: Date.now(),
             type: 'ai',
-            text: '給料日のAIルール設定画面を表示します。こちらで設定を変更できます。',
+            text: language === 'ja'
+              ? '給料日のAIルール設定画面を表示します。こちらで設定を変更できます。'
+              : 'Here\'s the AI rule settings for payday. You can change your settings here.',
             timestamp
           };
           setMessages(prev => [...prev, aiMessage]);
@@ -382,8 +434,12 @@ function ChatScreen() {
         // 最新の提案状況を表示
         setTimeout(() => {
           const statusText = currentProposal
-            ? `現在、提案が1件あります。\n\n💰 変換額: ${currentProposal.convertAmountArs.toLocaleString()} ARS\n💵 受取額: ${currentProposal.amountUsdc.toFixed(2)} USDC\n📈 レート: ${currentProposal.bestRateArsPerUsdc.toLocaleString()} ARS\n⛽ ガス代: ${currentProposal.gasFeeArs} PoL\n\n詳細は上の提案カードをご確認ください。`
-            : '現在、提案はありません。\n\n給料日になると、最適なタイミングでドル化の提案を行います。';
+            ? (language === 'ja'
+              ? `現在、提案が1件あります。\n\n💰 変換額: ${currentProposal.convertAmountArs.toLocaleString()} ARS\n💵 受取額: ${currentProposal.amountUsdc.toFixed(2)} USDC\n📈 レート: ${currentProposal.bestRateArsPerUsdc.toLocaleString()} ARS\n⛽ ガス代: ${currentProposal.gasFeeArs} PoL\n\n詳細は上の提案カードをご確認ください。`
+              : `You currently have 1 proposal.\n\n💰 Amount: ${currentProposal.convertAmountArs.toLocaleString()} ARS\n💵 Receive: ${currentProposal.amountUsdc.toFixed(2)} USDC\n📈 Rate: ${currentProposal.bestRateArsPerUsdc.toLocaleString()} ARS\n⛽ Gas: ${currentProposal.gasFeeArs} PoL\n\nPlease check the proposal card above for details.`)
+            : (language === 'ja'
+              ? '現在、提案はありません。\n\n給料日になると、最適なタイミングでドル化の提案を行います。'
+              : 'You currently have no proposals.\n\nOn payday, I\'ll suggest the optimal timing for conversion.');
 
           const aiMessage = {
             id: Date.now(),
@@ -413,7 +469,7 @@ function ChatScreen() {
           const aiMessage = {
             id: Date.now(),
             type: 'ai',
-            text: getMockResponse('rate_detail', currentProposal),
+            text: getMockResponse('rate_detail', currentProposal, language),
             timestamp
           };
           setMessages(prev => [...prev, aiMessage]);
@@ -437,7 +493,7 @@ function ChatScreen() {
           const aiMessage = {
             id: Date.now(),
             type: 'ai',
-            text: getMockResponse('chart', currentProposal),
+            text: getMockResponse('chart', currentProposal, language),
             timestamp
           };
           setMessages(prev => [...prev, aiMessage]);
@@ -460,7 +516,7 @@ function ChatScreen() {
           const aiMessage = {
             id: Date.now(),
             type: 'ai',
-            text: getMockResponse('execute', currentProposal),
+            text: getMockResponse('execute', currentProposal, language),
             timestamp
           };
           setMessages(prev => [...prev, aiMessage]);
@@ -560,7 +616,7 @@ function ChatScreen() {
             const aiMessage = {
               id: Date.now(),
               type: 'ai',
-              text: getMockResponse('skip', currentProposal),
+              text: getMockResponse('skip', currentProposal, language),
               timestamp
             };
             setMessages(prev => [...prev, aiMessage]);
@@ -573,7 +629,7 @@ function ChatScreen() {
             const aiMessage = {
               id: Date.now(),
               type: 'ai',
-              text: getMockResponse('skip', currentProposal),
+              text: getMockResponse('skip', currentProposal, language),
               timestamp
             };
             setMessages(prev => [...prev, aiMessage]);
@@ -589,10 +645,11 @@ function ChatScreen() {
 
   return (
     <div className="chat-screen">
+      <LanguageToggle />
       {/* ヘッダー */}
       <div className="chat-header">
-        <h2 className="chat-header-title">🤖 Camb.aiと話す</h2>
-        <p className="chat-header-subtitle">あなた専用のAIアシスタントに何でも相談</p>
+        <h2 className="chat-header-title">🤖 {t('chatWithAI')}</h2>
+        <p className="chat-header-subtitle">{t('yourDedicated')}{t('aiAssistant')}</p>
       </div>
 
       {/* チャットメッセージ */}
@@ -619,10 +676,14 @@ function ChatScreen() {
 
                 // 成功メッセージを追加
                 setTimeout(() => {
+                  const successText = language === 'ja'
+                    ? `✓ 設定を保存しました！\n\n給料日: 毎月${paymentDay}日\nドル化割合: ${convertPercent}%\n自動ドル化: ${autoConvert ? 'ON' : 'OFF'}`
+                    : `✓ Settings saved!\n\nPayday: ${paymentDay}th of each month\nConversion ratio: ${convertPercent}%\nAuto conversion: ${autoConvert ? 'ON' : 'OFF'}`;
+
                   const successMessage = {
                     id: Date.now(),
                     type: 'success_with_home_button',
-                    text: `✓ 設定を保存しました！\n\n給料日: 毎月${paymentDay}日\nドル化割合: ${convertPercent}%\n自動ドル化: ${autoConvert ? 'ON' : 'OFF'}`,
+                    text: successText,
                     timestamp: new Date()
                   };
                   setMessages(prev => [...prev, successMessage]);
@@ -634,25 +695,25 @@ function ChatScreen() {
                 <div className="settings-inline-card">
                   <div className="settings-inline-header">
                     <span className="settings-inline-icon">💚</span>
-                    <span className="settings-inline-title">自動ドル化ルール</span>
+                    <span className="settings-inline-title">{t('autoConversionRules')}</span>
                   </div>
 
                   <div className="settings-inline-content">
                     <div className="settings-inline-field">
-                      <label className="settings-inline-label">給料日</label>
+                      <label className="settings-inline-label">{t('payday')}</label>
                       <select
                         className="settings-inline-select"
                         value={paymentDay}
                         onChange={(e) => setPaymentDay(Number(e.target.value))}
                       >
                         {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                          <option key={day} value={day}>毎月 {day}日</option>
+                          <option key={day} value={day}>{t('everyMonth')} {day}{t('day')}</option>
                         ))}
                       </select>
                     </div>
 
                     <div className="settings-inline-field">
-                      <label className="settings-inline-label">ドル化割合: {convertPercent}%</label>
+                      <label className="settings-inline-label">{t('conversionRatio')}: {convertPercent}%</label>
                       <input
                         type="range"
                         className="settings-inline-range"
@@ -671,8 +732,8 @@ function ChatScreen() {
 
                     <div className="settings-inline-toggle-field">
                       <div className="settings-inline-toggle-label">
-                        <div className="settings-inline-toggle-title">自動ドル化</div>
-                        <div className="settings-inline-toggle-description">給料日に自動的に提案を実行</div>
+                        <div className="settings-inline-toggle-title">{t('autoConversion')}</div>
+                        <div className="settings-inline-toggle-description">{t('autoConversionDesc')}</div>
                       </div>
                       <label className="settings-inline-toggle">
                         <input
@@ -689,7 +750,7 @@ function ChatScreen() {
                       onClick={handleSave}
                       disabled={saving}
                     >
-                      {saving ? '保存中...' : '設定を保存'}
+                      {saving ? t('saving') : t('saveSettings')}
                     </button>
                   </div>
                 </div>
@@ -709,13 +770,13 @@ function ChatScreen() {
 
             return (
               <div key={message.id} className="rate-table-card">
-                <div className="rate-table-header">📊 レート比較表</div>
+                <div className="rate-table-header">📊 {t('rateComparisonTable')}</div>
                 <table className="rate-table">
                   <thead>
                     <tr>
-                      <th>レート種別</th>
+                      <th>{t('rateType')}</th>
                       <th>1 USDC =</th>
-                      <th>受取USDC</th>
+                      <th>{t('receiveUsdc')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -737,7 +798,7 @@ function ChatScreen() {
                   </tbody>
                 </table>
                 <div className="rate-table-note">
-                  💡 BLUEレートが最も有利（少ないARSでより多くのUSDCを獲得）
+                  💡 {t('rateNote')}
                 </div>
               </div>
             );
@@ -753,13 +814,13 @@ function ChatScreen() {
 
             return (
               <div key={message.id} className="rate-table-card">
-                <div className="rate-table-header">📊 現在のレート</div>
+                <div className="rate-table-header">📊 {language === 'ja' ? '現在のレート' : 'Current Rates'}</div>
                 <table className="rate-table">
                   <thead>
                     <tr>
-                      <th>レート種別</th>
+                      <th>{t('rateType')}</th>
                       <th>1 USDC =</th>
-                      <th>受取USDC (72,000 ARS)</th>
+                      <th>{t('receiveUsdc')} (72,000 ARS)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -794,15 +855,15 @@ function ChatScreen() {
                 {/* タイムスタンプ */}
                 <div className="chat-proposal-timestamp">
                   <div className="chat-proposal-timestamp-message">
-                    🤖✨ Camb.aiが給料のドル化タイミングを提案しました
+                    🤖✨ {t('aiProposalTitle')}
                   </div>
                   <div className="chat-proposal-timestamp-date">
-                    {new Date(message.proposal.createdAt).toLocaleDateString('ja-JP', {
+                    {new Date(message.proposal.createdAt).toLocaleDateString(language === 'ja' ? 'ja-JP' : 'en-US', {
                       year: 'numeric',
                       month: '2-digit',
                       day: '2-digit',
                     })}{' '}
-                    {new Date(message.proposal.createdAt).toLocaleTimeString('ja-JP', {
+                    {new Date(message.proposal.createdAt).toLocaleTimeString(language === 'ja' ? 'ja-JP' : 'en-US', {
                       hour: '2-digit',
                       minute: '2-digit',
                     })}
@@ -810,39 +871,43 @@ function ChatScreen() {
                 </div>
 
                 <h3 className="chat-proposal-title">
-                  今日の給料をドル化しましょう
+                  {t('proposalTitle')}
                 </h3>
 
                 <div className="chat-proposal-conversion">
                   <div className="chat-proposal-amount">
-                    <span className="chat-proposal-amount-label">変換額</span>
+                    <span className="chat-proposal-amount-label">{t('conversionAmount')}</span>
                     <span className="chat-proposal-amount-value">
                       {message.proposal.convertAmountArs.toLocaleString()}
-                      <span className="chat-proposal-amount-currency">ARS</span>
+                      <span className="chat-proposal-amount-currency">{t('ars')}</span>
                     </span>
                   </div>
                   <div className="chat-proposal-arrow">→</div>
                   <div className="chat-proposal-amount">
-                    <span className="chat-proposal-amount-label">受取額</span>
+                    <span className="chat-proposal-amount-label">{t('receiveAmount')}</span>
                     <span className="chat-proposal-amount-value chat-proposal-amount-value-usdc">
                       {message.proposal.amountUsdc.toFixed(2)}
-                      <span className="chat-proposal-amount-currency">USDC</span>
+                      <span className="chat-proposal-amount-currency">{t('usdc')}</span>
                     </span>
                   </div>
                 </div>
 
                 <div className="chat-proposal-reason">
                   <div className="chat-proposal-reason-icon">💡</div>
-                  <div className="chat-proposal-reason-text">{message.proposal.reason}</div>
+                  <div className="chat-proposal-reason-text">
+                    {language === 'ja'
+                      ? 'ガス代が低く、BLUEレートが他の市場（MEP・CCL）より有利です。今が変換の好機です。'
+                      : 'Gas fees are low, and the BLUE rate is more favorable than other markets (MEP・CCL). Now is a great time to convert.'}
+                  </div>
                 </div>
 
                 <div className="chat-proposal-meta">
                   <div className="chat-proposal-meta-item">
-                    レート: {message.proposal.bestRateArsPerUsdc.toLocaleString()} ARS
+                    {t('rate')}: {message.proposal.bestRateArsPerUsdc.toLocaleString()} {t('ars')}
                   </div>
                   <div className="chat-proposal-meta-divider">•</div>
                   <div className="chat-proposal-meta-item">
-                    ガス代: {message.proposal.gasFeeArs} PoL
+                    {t('gasFee')}: {message.proposal.gasFeeArs} PoL
                   </div>
                 </div>
               </div>
@@ -865,16 +930,27 @@ function ChatScreen() {
           // チャートメッセージ
           if (message.type === 'chart') {
             // 過去7日間のレートデータ（より現実的な値動き）
-            const rateData = [
-              { day: '7日前', rate: 1205 },
-              { day: '6日前', rate: 1198 },
-              { day: '5日前', rate: 1215 },
-              { day: '4日前', rate: 1208 },
-              { day: '3日前', rate: 1232 },
-              { day: '2日前', rate: 1245 },
-              { day: '昨日', rate: 1252 },
-              { day: '今日', rate: 1265.5 }
-            ];
+            const rateData = language === 'ja'
+              ? [
+                  { day: '7日前', rate: 1205 },
+                  { day: '6日前', rate: 1198 },
+                  { day: '5日前', rate: 1215 },
+                  { day: '4日前', rate: 1208 },
+                  { day: '3日前', rate: 1232 },
+                  { day: '2日前', rate: 1245 },
+                  { day: '昨日', rate: 1252 },
+                  { day: '今日', rate: 1265.5 }
+                ]
+              : [
+                  { day: '7 days ago', rate: 1205 },
+                  { day: '6 days ago', rate: 1198 },
+                  { day: '5 days ago', rate: 1215 },
+                  { day: '4 days ago', rate: 1208 },
+                  { day: '3 days ago', rate: 1232 },
+                  { day: '2 days ago', rate: 1245 },
+                  { day: 'Yesterday', rate: 1252 },
+                  { day: 'Today', rate: 1265.5 }
+                ];
 
             const minRate = Math.min(...rateData.map(d => d.rate));
             const maxRate = Math.max(...rateData.map(d => d.rate));
@@ -906,7 +982,7 @@ function ChatScreen() {
 
             return (
               <div key={message.id} className="chart-card">
-                <div className="chart-header">📈 過去7日間のレート推移</div>
+                <div className="chart-header">📈 {t('pastSevenDaysChart')}</div>
                 <div className="chart-content">
                   <svg
                     width="100%"
@@ -1000,7 +1076,7 @@ function ChatScreen() {
                   </svg>
 
                   <div className="chart-info">
-                    現在のレートは過去7日間で最高値に近い水準です
+                    {t('currentRateHighest')}
                   </div>
                 </div>
               </div>
@@ -1067,7 +1143,7 @@ function ChatScreen() {
               {showQuickActions ? '▼' : '▶'}
             </span>
             <span className="chat-quick-actions-toggle-text">
-              {showQuickActions ? '質問メニューを閉じる' : '💬 よくある質問'}
+              {showQuickActions ? t('closeMenu') : `💬 ${t('frequentQuestions')}`}
             </span>
           </button>
 
@@ -1080,28 +1156,28 @@ function ChatScreen() {
                     onClick={() => handleQuickAction('rate_detail')}
                   >
                     <span className="chat-quick-action-icon">📊</span>
-                    レートの内訳も教えて
+                    {t('rateDetails')}
                   </button>
                   <button
                     className="chat-quick-action chat-quick-action-primary"
                     onClick={() => handleQuickAction('chart')}
                   >
                     <span className="chat-quick-action-icon">📈</span>
-                    チャートを見せて
+                    {t('showChart')}
                   </button>
                   <button
                     className="chat-quick-action chat-quick-action-success"
                     onClick={() => handleQuickAction('execute')}
                   >
                     <span className="chat-quick-action-icon">✓</span>
-                    この条件で実行する
+                    {t('executeThis')}
                   </button>
                   <button
                     className="chat-quick-action chat-quick-action-secondary"
                     onClick={() => handleQuickAction('skip')}
                   >
                     <span className="chat-quick-action-icon">↩</span>
-                    今回はスキップ
+                    {t('skipThis')}
                   </button>
                 </>
               ) : (
@@ -1111,14 +1187,14 @@ function ChatScreen() {
                     onClick={() => handleWaitAction('show_settings')}
                   >
                     <span className="chat-quick-action-icon">⚙️</span>
-                    給料日のAIルールを変えたい
+                    {t('changeAIRules')}
                   </button>
                   <button
                     className="chat-quick-action chat-quick-action-primary"
                     onClick={() => handleWaitAction('show_proposal_status')}
                   >
                     <span className="chat-quick-action-icon">📊</span>
-                    今の提案状況を知りたい
+                    {t('checkProposalStatus')}
                   </button>
                 </>
               )}
@@ -1138,7 +1214,7 @@ function ChatScreen() {
               {showQuickActions ? '▼' : '▶'}
             </span>
             <span className="chat-quick-actions-toggle-text">
-              {showQuickActions ? '質問メニューを閉じる' : '💬 よくある質問'}
+              {showQuickActions ? t('closeMenu') : `💬 ${t('frequentQuestions')}`}
             </span>
           </button>
 
@@ -1149,14 +1225,14 @@ function ChatScreen() {
                 onClick={() => handleWaitAction('show_settings')}
               >
                 <span className="chat-quick-action-icon">⚙️</span>
-                給料日のAIルールを変えたい
+                {t('changeAIRules')}
               </button>
               <button
                 className="chat-quick-action chat-quick-action-primary"
                 onClick={() => handleWaitAction('show_proposal_status')}
               >
                 <span className="chat-quick-action-icon">📊</span>
-                今の提案状況を知りたい
+                {t('checkProposalStatus')}
               </button>
             </div>
           )}
@@ -1174,7 +1250,7 @@ function ChatScreen() {
               {showQuickActions ? '▼' : '▶'}
             </span>
             <span className="chat-quick-actions-toggle-text">
-              {showQuickActions ? '設定メニューを閉じる' : '⚙️ 設定変更・確認'}
+              {showQuickActions ? t('closeSettingsMenu') : `⚙️ ${t('settingsMenu')}`}
             </span>
           </button>
 
@@ -1185,21 +1261,21 @@ function ChatScreen() {
                 onClick={() => handleWaitAction('change_ratio')}
               >
                 <span className="chat-quick-action-icon">💵</span>
-                給料の割合を変更したい
+                {t('changeRatio')}
               </button>
               <button
                 className="chat-quick-action chat-quick-action-primary"
                 onClick={() => handleWaitAction('change_payday')}
               >
                 <span className="chat-quick-action-icon">📅</span>
-                給料日を変えたい
+                {t('changePayday')}
               </button>
               <button
                 className="chat-quick-action chat-quick-action-primary"
                 onClick={() => handleWaitAction('current_rate')}
               >
                 <span className="chat-quick-action-icon">📊</span>
-                今日のレートを知りたい
+                {t('checkCurrentRate')}
               </button>
             </div>
           )}
@@ -1210,7 +1286,7 @@ function ChatScreen() {
         <input
           type="text"
           className="chat-input"
-          placeholder="メッセージを入力..."
+          placeholder={`${t('typeMessage')}...`}
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && handleSend()}

@@ -11,6 +11,8 @@ import { getLatestProposal } from '../api/proposals';
 import type { ProposalHistoryItem } from '../types/proposal';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../api/client';
+import { useLanguage } from '../contexts/LanguageContext';
+import LanguageToggle from '../components/LanguageToggle';
 
 // 実行結果の型
 interface ExecuteResult {
@@ -32,6 +34,7 @@ export function DashboardScreen() {
   const { user, walletAddress } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
 
   // デモモードフラグ
   const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
@@ -303,13 +306,14 @@ export function DashboardScreen() {
 
   return (
     <div className="dashboard-screen">
+      <LanguageToggle />
       {/* ヘッダー */}
       <header className="dashboard-header">
         <div className="dashboard-header-content">
-          <h1 className="dashboard-app-name">💱 Camb.ai</h1>
+          <h1 className="dashboard-app-name">💱 {t('appName')}</h1>
           <button
             className="dashboard-notification-button"
-            aria-label="通知"
+            aria-label={t('notification')}
             onClick={handleCheckProposal}
           >
             🔔
@@ -337,19 +341,17 @@ export function DashboardScreen() {
               <div className="hero-card hero-card-empty">
                 <div className="hero-card-status-indicator" style={{ marginBottom: '20px' }}>
                   <span className="hero-card-status-dot"></span>
-                  <span className="hero-card-status-text">監視中</span>
+                  <span className="hero-card-status-text">{t('monitoring')}</span>
                 </div>
                 <p className="hero-card-description" style={{ marginBottom: '24px', fontSize: '0.95em' }}>
-                  Camb.ai は Blue / MEP / CCL とガス代を常時監視しています。
+                  {t('cambaiMonitoring')}
                 </p>
 
                 <div className="hero-card-wait-message">
                   <div className="hero-card-icon">⏳</div>
-                  <h2 className="hero-card-title">今日はまだ様子を見たほうが良さそうです</h2>
+                  <h2 className="hero-card-title">{t('waitMessage')}</h2>
                   <p className="hero-card-description">
-                    レートとガス代が十分に有利ではありません。
-                    <br />
-                    条件が揃えば、最適なタイミングで自動的にご提案します。
+                    {t('waitDescription')}
                   </p>
                 </div>
 
@@ -360,36 +362,34 @@ export function DashboardScreen() {
                     window.dispatchEvent(new CustomEvent('switchTab', { detail: 'chat' }));
                   }}
                 >
-                  💬 今の状況をチャットで聞く
+                  💬 {t('askCurrentStatus')}
                 </button>
               </div>
             ) : (
               /* scenario=best または通常モード */
               <div className="hero-card hero-card-empty">
                 <div className="hero-card-icon">🤖</div>
-                <h2 className="hero-card-title">AIがあなたの給料を守っています</h2>
+                <h2 className="hero-card-title">{t('aiProtecting')}</h2>
                 <p className="hero-card-description">
-                  レート・ガス代を24時間監視し、
-                  <br />
-                  給料日に最適なタイミングで提案します。
+                  {t('aiDescription')}
                 </p>
                 <div className="hero-card-status">
                   <div className="hero-card-status-indicator">
                     <span className="hero-card-status-dot"></span>
-                    <span className="hero-card-status-text">監視中</span>
+                    <span className="hero-card-status-text">{t('monitoring')}</span>
                   </div>
                   <div className="hero-card-status-info">
-                    次回給料日: {settings?.paymentDay}日 （あと{daysUntilPayday}日）
+                    {t('nextPayday')}: {settings?.paymentDay}{language === 'ja' ? '日' : 'th'} （{t('daysRemaining')}{daysUntilPayday}{t('days')}）
                   </div>
                   {latestProposal && (
                     <div className="hero-card-last-proposal">
-                      最後の提案:{' '}
-                      {new Date(latestProposal.createdAt).toLocaleDateString('ja-JP', {
+                      {t('lastProposal')}:{' '}
+                      {new Date(latestProposal.createdAt).toLocaleDateString(language === 'ja' ? 'ja-JP' : 'en-US', {
                         year: 'numeric',
                         month: '2-digit',
                         day: '2-digit',
                       })}{' '}
-                      {new Date(latestProposal.createdAt).toLocaleTimeString('ja-JP', {
+                      {new Date(latestProposal.createdAt).toLocaleTimeString(language === 'ja' ? 'ja-JP' : 'en-US', {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
@@ -400,7 +400,7 @@ export function DashboardScreen() {
 
                 {isPayday && (
                   <div className="hero-card-payday-notice">
-                    今日は給料日です。AIから提案が届いています。
+                    {t('paydayNotice')}
                   </div>
                 )}
 
@@ -408,7 +408,7 @@ export function DashboardScreen() {
                   className="hero-card-button hero-card-button-demo"
                   onClick={handleCheckProposal}
                 >
-                  🔔 今日の提案を開く
+                  🔔 {t('openProposal')}
                 </button>
               </div>
             )}
@@ -420,7 +420,7 @@ export function DashboardScreen() {
           <div className="hero-card hero-card-loading">
             <div className="loading-spinner"></div>
             <p className="loading-text">
-              AIが最適な条件を計算しています...
+              {t('calculating')}
             </p>
           </div>
         )}
@@ -431,15 +431,15 @@ export function DashboardScreen() {
             {/* AIが提案したタイムスタンプ */}
             <div className="proposal-timestamp">
               <div className="proposal-timestamp-message">
-                🤖 Camb.aiが給料の<br />ドル化タイミングを提案しました
+                🤖 {t('proposalMessage')}
               </div>
               <div className="proposal-timestamp-date">
-                {new Date(homeState.proposal.createdAt).toLocaleDateString('ja-JP', {
+                {new Date(homeState.proposal.createdAt).toLocaleDateString(language === 'ja' ? 'ja-JP' : 'en-US', {
                   year: 'numeric',
                   month: '2-digit',
                   day: '2-digit',
                 })}{' '}
-                {new Date(homeState.proposal.createdAt).toLocaleTimeString('ja-JP', {
+                {new Date(homeState.proposal.createdAt).toLocaleTimeString(language === 'ja' ? 'ja-JP' : 'en-US', {
                   hour: '2-digit',
                   minute: '2-digit',
                 })}
@@ -447,39 +447,43 @@ export function DashboardScreen() {
             </div>
 
             <h3 className="hero-card-title-active">
-              今日の給料をドル化しましょう
+              {t('proposalTitle')}
             </h3>
 
             <div className="hero-card-conversion">
               <div className="hero-card-amount">
-                <span className="hero-card-amount-label">変換額</span>
+                <span className="hero-card-amount-label">{t('conversionAmount')}</span>
                 <span className="hero-card-amount-value">
                   {homeState.proposal.convertAmountArs.toLocaleString()}
-                  <span className="hero-card-amount-currency">ARS</span>
+                  <span className="hero-card-amount-currency">{t('ars')}</span>
                 </span>
               </div>
               <div className="hero-card-arrow">→</div>
               <div className="hero-card-amount">
-                <span className="hero-card-amount-label">受取額</span>
+                <span className="hero-card-amount-label">{t('receiveAmount')}</span>
                 <span className="hero-card-amount-value hero-card-amount-value-usdc">
                   {homeState.proposal.amountUsdc.toFixed(2)}
-                  <span className="hero-card-amount-currency">USDC</span>
+                  <span className="hero-card-amount-currency">{t('usdc')}</span>
                 </span>
               </div>
             </div>
 
             <div className="hero-card-reason">
               <div className="hero-card-reason-icon">💡</div>
-              <div className="hero-card-reason-text">{homeState.proposal.reason}</div>
+              <div className="hero-card-reason-text">
+                {language === 'ja'
+                  ? 'ガス代が低く、BLUEレートが他の市場（MEP・CCL）より有利です。今が変換の好機です。'
+                  : 'Gas fees are low, and the BLUE rate is more favorable than other markets (MEP・CCL). Now is a great time to convert.'}
+              </div>
             </div>
 
             <div className="hero-card-meta">
               <div className="hero-card-meta-item">
-                レート: {homeState.proposal.bestRateArsPerUsdc.toLocaleString()} ARS
+                {t('rate')}: {homeState.proposal.bestRateArsPerUsdc.toLocaleString()} {t('ars')}
               </div>
               <div className="hero-card-meta-divider">•</div>
               <div className="hero-card-meta-item">
-                ガス代: {homeState.proposal.gasFeeArs} PoL
+                {t('gasFee')}: {homeState.proposal.gasFeeArs} PoL
               </div>
             </div>
 
@@ -488,13 +492,13 @@ export function DashboardScreen() {
                 className="hero-card-button hero-card-button-primary"
                 onClick={handleExecute}
               >
-                この条件で実行する
+                {t('executeProposal')}
               </button>
               <button
                 className="hero-card-button hero-card-button-secondary"
                 onClick={handleSkip}
               >
-                今回はスキップ
+                {t('skipThis')}
               </button>
             </div>
 
@@ -503,7 +507,7 @@ export function DashboardScreen() {
               className="hero-card-ask-why-button"
               onClick={() => handleAskWhy(homeState.proposal)}
             >
-              🤖 Camb.aiに理由を詳しく聞く
+              🤖 {t('askWhy')}
             </button>
           </div>
         )}
@@ -513,9 +517,7 @@ export function DashboardScreen() {
           <div className="hero-card hero-card-loading">
             <div className="loading-spinner"></div>
             <p className="loading-text">
-              オンチェーンで実行しています...
-              <br />
-              しばらくお待ちください
+              {t('executing')}
             </p>
           </div>
         )}
@@ -533,13 +535,13 @@ export function DashboardScreen() {
         {walletSummary && (
           <div className="wallet-summary">
             <div className="wallet-summary-main">
-              <div className="wallet-summary-label">保有USDC</div>
+              <div className="wallet-summary-label">{t('holdingUsdc')}</div>
               <div className="wallet-summary-value">
-                {walletSummary.currentUsdcBalance.toFixed(2)} USDC
+                {walletSummary.currentUsdcBalance.toFixed(2)} {t('usdc')}
               </div>
               {walletSummary.arsEquivalent && (
                 <div className="wallet-summary-subtext">
-                  ≒ {walletSummary.arsEquivalent.toLocaleString()} ARS 相当
+                  ≒ {walletSummary.arsEquivalent.toLocaleString()} {t('ars')} {t('arsEquivalent')}
                 </div>
               )}
             </div>
@@ -551,10 +553,10 @@ export function DashboardScreen() {
                   <div className="wallet-summary-savings-icon">💰</div>
                   <div className="wallet-summary-savings-content">
                     <div className="wallet-summary-savings-label">
-                      インフレから守れた給料
+                      {t('protectedSalary')}
                     </div>
                     <div className="wallet-summary-savings-value">
-                      +{walletSummary.totalSavingsArs.toLocaleString()} ARS
+                      +{walletSummary.totalSavingsArs.toLocaleString()} {t('ars')}
                     </div>
                   </div>
                 </div>
