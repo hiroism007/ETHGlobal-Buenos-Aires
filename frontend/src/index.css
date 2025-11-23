@@ -24,12 +24,15 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
   background: #F5F5F5;
   overflow-x: hidden;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 #root {
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 button {

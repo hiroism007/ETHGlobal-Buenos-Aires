@@ -905,7 +905,7 @@ function ChatScreen() {
                 <ExecutionResultCard
                   proposal={message.proposal}
                   result={message.result}
-                  onClose={() => {}}
+                  onClose={() => window.location.href = '/home'}
                 />
               </div>
             );
