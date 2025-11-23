@@ -33,6 +33,19 @@ body {
 #root {
   min-height: 100vh;
   min-height: 100dvh;
+  animation: pageEntrance 0.4s ease-out;
+}
+
+/* ページ遷移の滑らかなアニメーション */
+@keyframes pageEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 button {

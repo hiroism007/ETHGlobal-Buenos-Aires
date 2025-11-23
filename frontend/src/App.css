@@ -1327,6 +1327,38 @@
   background: #4B5563;
 }
 
+/* チャット内アクションボタン（ホームへ戻るなど） */
+.chat-action-button {
+  display: inline-block;
+  background: #74ACDF;
+  color: #ffffff;
+  border: 3px solid #000000;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 0.95em;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 1);
+  text-align: center;
+  width: 100%;
+}
+
+.chat-action-button:hover {
+  background: #5A96CC;
+}
+
+.chat-action-button:active {
+  background: #4A86BC;
+  box-shadow: 1px 1px 0px 0px rgba(0, 0, 0, 1);
+  transform: translate(2px, 2px);
+}
+
+.chat-action-button-primary {
+  background: #74ACDF;
+  color: #ffffff;
+}
+
 /* レート比較表 */
 .rate-table-card {
   background: #ffffff;
@@ -1695,10 +1727,35 @@
   padding: 24px 20px;
   margin: 16px 0;
   box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
-  animation: fadeIn 0.5s ease-out;
+  animation: chatCardEntrance 0.6s ease-out, chatNotificationPulse 2s ease-in-out 0.6s 3;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  position: relative;
+}
+
+/* チャット提案カードの登場アニメーション - モダンでスムーズ */
+@keyframes chatCardEntrance {
+  0% {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* チャット通知パルスアニメーション - シンプルで洗練 */
+@keyframes chatNotificationPulse {
+  0%, 100% {
+    box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+    transform: translateY(0);
+  }
+  50% {
+    box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 0.8);
+    transform: translateY(-2px);
+  }
 }
 
 .chat-proposal-timestamp {
@@ -1730,6 +1787,40 @@
   max-width: fit-content;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  animation: chatBadgeBounce 0.8s ease-out 0.3s, chatBadgeGlow 2s ease-in-out 1.5s 3;
+}
+
+/* チャットバッジのバウンスアニメーション */
+@keyframes chatBadgeBounce {
+  0% {
+    transform: translateY(-10px) scale(0.9);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(5px) scale(1.05);
+  }
+  70% {
+    transform: translateY(-3px) scale(0.98);
+  }
+  85% {
+    transform: translateY(2px) scale(1.01);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* チャットバッジの光るアニメーション */
+@keyframes chatBadgeGlow {
+  0%, 100% {
+    box-shadow: 5px 5px 0px 0px rgba(0, 0, 0, 1);
+  }
+  50% {
+    box-shadow: 5px 5px 0px 0px rgba(0, 0, 0, 1),
+                0 0 20px rgba(255, 152, 0, 0.6),
+                0 0 40px rgba(255, 152, 0, 0.3);
+  }
 }
 
 .chat-proposal-timestamp-date {

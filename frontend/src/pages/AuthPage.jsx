@@ -11,10 +11,14 @@ function AuthPage() {
   const params = new URLSearchParams(window.location.search);
   const scenario = params.get('scenario');
 
-  // ウォレットアドレスが取得できたらホーム画面へ遷移
+  // ウォレットアドレスが取得できたらチャット画面へ遷移
   useEffect(() => {
     if (evmAddress) {
-      const targetPath = scenario ? `/home?scenario=${scenario}` : '/home';
+      // プレーンなチャットで始めるため、提案をクリア
+      localStorage.removeItem('preloadProposal');
+      localStorage.setItem('chatScenario', 'plain');
+
+      const targetPath = scenario ? `/chat?scenario=${scenario}` : '/chat';
       navigate(targetPath);
     }
   }, [evmAddress, navigate, scenario]);

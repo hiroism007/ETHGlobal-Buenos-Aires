@@ -131,6 +131,47 @@ function RootRedirect() {
   return <Navigate to={`/auth${search}`} replace />;
 }
 
+function ChatApp() {
+  const [activeTab, setActiveTab] = useState('chat');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const scenario = params.get('scenario');
+    if (scenario) {
+      localStorage.setItem('chatScenario', scenario);
+      console.log('[ChatApp] Scenario saved to localStorage:', scenario);
+    }
+  }, []);
+
+  const renderScreen = () => {
+    switch (activeTab) {
+      case 'home':
+        return <DashboardScreen />;
+      case 'chat':
+        return <ChatScreen />;
+      case 'settings':
+        return <SettingsScreen />;
+      case 'history':
+        return <HistoryScreen />;
+      default:
+        return <ChatScreen />;
+    }
+  };
+
+  return (
+    <div className="app">
+      <div className="content">
+        {renderScreen()}
+      </div>
+
+      <TabNavigation
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
+    </div>
+  );
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -142,6 +183,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <MainApp />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chat"
+            element={
+              <ProtectedRoute>
+                <ChatApp />
               </ProtectedRoute>
             }
           />

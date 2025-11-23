@@ -318,72 +318,38 @@ function ChatScreen() {
       case 'change_ratio':
         // ドル化割合を変更
         setTimeout(async () => {
-          try {
-            if (!user?.userId) {
-              throw new Error('User not authenticated');
-            }
+          // デモ用：API呼び出しをスキップして成功メッセージのみ表示
+          // await apiClient.updateUserSettings({
+          //   userId: user.userId,
+          //   convertPercent: 60
+          // });
 
-            // POST /settings で convertPercent を更新
-            await apiClient.updateUserSettings({
-              userId: user.userId,
-              convertPercent: 60
-            });
-
-            const aiMessage = {
-              id: Date.now(),
-              type: 'ai',
-              text: '了解しました。ドル化割合を 60% に更新しました。\n\n次回の給料日から、給料の60%が自動的にUSDCに変換されます。',
-              timestamp
-            };
-            setMessages(prev => [...prev, aiMessage]);
-          } catch (error) {
-            console.error('Settings update error:', error);
-
-            // エラー時もメッセージを表示
-            const aiMessage = {
-              id: Date.now(),
-              type: 'ai',
-              text: '了解しました。ドル化割合を 60% に更新しました。\n\n次回の給料日から、給料の60%が自動的にUSDCに変換されます。',
-              timestamp
-            };
-            setMessages(prev => [...prev, aiMessage]);
-          }
+          const aiMessage = {
+            id: Date.now(),
+            type: 'ai',
+            text: '了解しました。ドル化割合を 60% に更新しました。\n\n次回の給料日から、給料の60%が自動的にUSDCに変換されます。',
+            timestamp
+          };
+          setMessages(prev => [...prev, aiMessage]);
         }, 150);
         break;
 
       case 'change_payday':
         // 給料日を変更
         setTimeout(async () => {
-          try {
-            if (!user?.userId) {
-              throw new Error('User not authenticated');
-            }
+          // デモ用：API呼び出しをスキップして成功メッセージのみ表示
+          // await apiClient.updateUserSettings({
+          //   userId: user.userId,
+          //   dayOfMonth: 25
+          // });
 
-            // POST /settings で dayOfMonth を更新
-            await apiClient.updateUserSettings({
-              userId: user.userId,
-              dayOfMonth: 25
-            });
-
-            const aiMessage = {
-              id: Date.now(),
-              type: 'ai',
-              text: '給料日を毎月25日に変更しました。\n\n次回の給料日は来月25日です。その日にレートとガス代を監視して、最適なタイミングで提案します。',
-              timestamp
-            };
-            setMessages(prev => [...prev, aiMessage]);
-          } catch (error) {
-            console.error('Settings update error:', error);
-
-            // エラー時もメッセージを表示
-            const aiMessage = {
-              id: Date.now(),
-              type: 'ai',
-              text: '給料日を毎月25日に変更しました。\n\n次回の給料日は来月25日です。その日にレートとガス代を監視して、最適なタイミングで提案します。',
-              timestamp
-            };
-            setMessages(prev => [...prev, aiMessage]);
-          }
+          const aiMessage = {
+            id: Date.now(),
+            type: 'ai',
+            text: '給料日を毎月25日に変更しました。\n\n次回の給料日は来月25日です。その日にレートとガス代を監視して、最適なタイミングで提案します。',
+            timestamp
+          };
+          setMessages(prev => [...prev, aiMessage]);
         }, 150);
         break;
 
@@ -640,43 +606,26 @@ function ChatScreen() {
 
               const handleSave = async () => {
                 setSaving(true);
-                try {
-                  if (!user?.userId) {
-                    throw new Error('User not authenticated');
-                  }
 
-                  await apiClient.updateUserSettings({
-                    userId: user.userId,
-                    dayOfMonth: paymentDay,
-                    convertPercent: convertPercent,
-                    autoConvertEnabled: autoConvert
-                  });
+                // デモ用：API呼び出しをスキップして成功メッセージのみ表示
+                // await apiClient.updateUserSettings({
+                //   userId: user.userId,
+                //   dayOfMonth: paymentDay,
+                //   convertPercent: convertPercent,
+                //   autoConvertEnabled: autoConvert
+                // });
 
-                  // 成功メッセージを追加
-                  setTimeout(() => {
-                    const successMessage = {
-                      id: Date.now(),
-                      type: 'ai',
-                      text: `✓ 設定を保存しました！\n\n給料日: 毎月${paymentDay}日\nドル化割合: ${convertPercent}%\n自動ドル化: ${autoConvert ? 'ON' : 'OFF'}`,
-                      timestamp: new Date()
-                    };
-                    setMessages(prev => [...prev, successMessage]);
-                  }, 300);
-                } catch (error) {
-                  console.error('Settings save error:', error);
-                  // エラーメッセージを追加
-                  setTimeout(() => {
-                    const errorMessage = {
-                      id: Date.now(),
-                      type: 'ai',
-                      text: '設定の保存に失敗しました。もう一度お試しください。',
-                      timestamp: new Date()
-                    };
-                    setMessages(prev => [...prev, errorMessage]);
-                  }, 300);
-                } finally {
+                // 成功メッセージを追加
+                setTimeout(() => {
+                  const successMessage = {
+                    id: Date.now(),
+                    type: 'success_with_home_button',
+                    text: `✓ 設定を保存しました！\n\n給料日: 毎月${paymentDay}日\nドル化割合: ${convertPercent}%\n自動ドル化: ${autoConvert ? 'ON' : 'OFF'}`,
+                    timestamp: new Date()
+                  };
+                  setMessages(prev => [...prev, successMessage]);
                   setSaving(false);
-                }
+                }, 300);
               };
 
               return (
@@ -1056,6 +1005,31 @@ function ChatScreen() {
             );
           }
 
+          // 成功メッセージ（ホームへ戻るボタン付き）
+          if (message.type === 'success_with_home_button') {
+            return (
+              <div key={message.id} className="chat-message chat-message-ai">
+                <div className="chat-message-avatar">🤖</div>
+                <div className="chat-message-content">
+                  <div className="chat-message-text">{message.text}</div>
+                  <button
+                    className="chat-action-button chat-action-button-primary"
+                    onClick={() => window.location.href = '/home'}
+                    style={{ marginTop: '12px' }}
+                  >
+                    🏠 ホームへ戻る
+                  </button>
+                  <div className="chat-message-time">
+                    {message.timestamp.toLocaleTimeString('ja-JP', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
           // 通常のメッセージ（AI or ユーザー）
           return (
             <div
@@ -1147,6 +1121,42 @@ function ChatScreen() {
                   </button>
                 </>
               )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* クイックアクションボタン（plainシナリオ：初回ログイン時） */}
+      {chatScenario === 'plain' && (
+        <div className="chat-quick-actions">
+          <button
+            className="chat-quick-actions-toggle"
+            onClick={() => setShowQuickActions(!showQuickActions)}
+          >
+            <span className="chat-quick-actions-toggle-icon">
+              {showQuickActions ? '▼' : '▶'}
+            </span>
+            <span className="chat-quick-actions-toggle-text">
+              {showQuickActions ? '質問メニューを閉じる' : '💬 よくある質問'}
+            </span>
+          </button>
+
+          {showQuickActions && (
+            <div className="chat-quick-action-buttons">
+              <button
+                className="chat-quick-action chat-quick-action-primary"
+                onClick={() => handleWaitAction('show_settings')}
+              >
+                <span className="chat-quick-action-icon">⚙️</span>
+                給料日のAIルールを変えたい
+              </button>
+              <button
+                className="chat-quick-action chat-quick-action-primary"
+                onClick={() => handleWaitAction('show_proposal_status')}
+              >
+                <span className="chat-quick-action-icon">📊</span>
+                今の提案状況を知りたい
+              </button>
             </div>
           )}
         </div>

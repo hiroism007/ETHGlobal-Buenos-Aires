@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import type { Proposal, SalarySettings, WalletSummary } from '../types';
 import { createProposal, getSettings, executeProposal, getWalletSummary } from '../api/salary';
 import { ExecutionResultCard } from '../components/ExecutionResultCard';
@@ -31,6 +31,7 @@ type HomeState =
 export function DashboardScreen() {
   const { user, walletAddress } = useAuth();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // デモモードフラグ
   const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
@@ -278,8 +279,8 @@ export function DashboardScreen() {
     localStorage.setItem('preloadProposal', JSON.stringify(proposal));
     localStorage.setItem('chatScenario', 'best');
 
-    // チャットタブに遷移（App.jsxのタブ切り替え機能を使用）
-    window.dispatchEvent(new CustomEvent('switchTab', { detail: 'chat' }));
+    // チャット画面へ遷移
+    navigate('/chat');
   };
 
   /**
