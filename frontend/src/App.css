@@ -1359,6 +1359,24 @@
   color: #ffffff;
 }
 
+.chat-action-button-home {
+  background: #10B981;
+  color: #ffffff;
+  font-size: 1.1em;
+  padding: 16px 32px;
+  margin-top: 16px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.chat-action-button-home:hover {
+  background: #059669;
+}
+
+.chat-action-button-home:active {
+  background: #047857;
+}
+
 /* レート比較表 */
 .rate-table-card {
   background: #ffffff;

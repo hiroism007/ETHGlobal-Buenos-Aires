@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ExecutionResultCard } from './ExecutionResultCard';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../api/client';
@@ -30,6 +31,7 @@ BLUE/MEP/CCL を比較し、最も効率の良い条件でした。`,
 
 function ChatScreen() {
   const { user, walletAddress } = useAuth();
+  const navigate = useNavigate();
 
   // チャットシナリオを状態として管理
   const [chatScenario, setChatScenario] = useState(localStorage.getItem('chatScenario') || 'best');
@@ -1013,9 +1015,8 @@ function ChatScreen() {
                 <div className="chat-message-content">
                   <div className="chat-message-text">{message.text}</div>
                   <button
-                    className="chat-action-button chat-action-button-primary"
-                    onClick={() => window.location.href = '/home'}
-                    style={{ marginTop: '12px' }}
+                    className="chat-action-button chat-action-button-home"
+                    onClick={() => navigate('/home')}
                   >
                     🏠 ホームへ戻る
                   </button>
